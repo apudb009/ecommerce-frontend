@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import {
@@ -199,10 +200,12 @@ const ProductDetail: FC<Props> = ({ slug }) => {
         <div>
           <div className="aspect-square overflow-hidden rounded-lg border bg-gray-50">
             {images.length > 0 ? (
-              <img
+              <Image
                 src={images[selectedImage].url}
                 alt={product.name}
-                className="h-full w-full object-cover"
+                className="h-full w-full"
+                width={500}
+                height={500}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-gray-300">
@@ -221,7 +224,7 @@ const ProductDetail: FC<Props> = ({ slug }) => {
                     selectedImage === i ? 'border-blue-600' : 'border-transparent'
                   }`}
                 >
-                  <img src={img.url} alt="" className="h-full w-full object-cover" />
+                  <Image src={img.url} alt="" className="h-full w-full" width={60} height={60} />
                 </button>
               ))}
             </div>

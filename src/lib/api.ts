@@ -50,6 +50,13 @@ export function deleteCookie(name: string) {
   document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
 }
 
+// ── AUTH HELPERS ──────────────────────────────────
+const getLoginPath = (): string => {
+  if (typeof window === 'undefined') return '/login';
+  if (window.location.pathname.startsWith('/admin')) return '/admin/login';
+  return '/login';
+};
+
 export function clearAuthCookies() {
   deleteCookie(TOKEN_KEY);
   deleteCookie(REFRESH_KEY);
@@ -108,9 +115,10 @@ api.interceptors.response.use(
       } catch {
         // refresh failed — clear everything
         clearTokens();
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
+        const loginPath = getLoginPath();
+        //if (typeof window !== 'undefined') {
+        window.location.href = loginPath;
+        //}
       }
     }
 

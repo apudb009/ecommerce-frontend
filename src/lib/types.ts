@@ -414,3 +414,19 @@ export type SettingKey =
 export type SettingType = 'string' | 'number' | 'boolean' | 'object';
 
 export type SettingStore = Record<SettingKey, SettingType>;
+
+export interface SearchParam {
+  page?: number;
+  limit: number;
+  search?: string;
+  categoryId?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  inStock?: string;
+  minRating?: string;
+  variantValues?: string;
+  variantName?: string;
+  colors?: string;
+  sortBy: string;
+  sortOrder: string;
+}

@@ -41,6 +41,7 @@ export default function LoginPage() {
       toast.success('Welcome back!');
     } catch {
       toast.error('Invalid email or password');
+      return;
     } finally {
       setLoading(false);
     }
