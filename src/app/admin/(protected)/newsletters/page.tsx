@@ -6,30 +6,34 @@ import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { Newsletter } from '@/lib/types';
+import { useAdminTable } from '@/hooks/useAdminTable';
+import AdminPagination from '@/components/admin/table/AdminPagination';
+import SortableHeader from '@/components/admin/table/SortableHeader';
 
 export default function AdminNewslettersPage() {
-  const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchNewsletters = async () => {
-      try {
-        const { data } = await api.get('/newsletters');
-        setNewsletters(data);
-      } catch {
-        toast.error('Failed to load Newsletters');
-      } finally {
-        setLoading(false);
-      }
-    };
-    void fetchNewsletters();
-  }, []);
+  const {
+    data: newsletters,
+    meta,
+    loading,
+    limit,
+    search,
+    sort,
+    order,
+    setPage,
+    setSearch,
+    setSort,
+    setLimit,
+    refresh,
+  } = useAdminTable<Newsletter>({
+    endpoint: '/newsletters',
+    defaultSort: 'createdAt',
+  });
 
   const handleDelete = async (id: number) => {
     if (!confirm(`Delete newsletters?`)) return;
     try {
       await api.delete(`/newsletters/${id}`);
-      setNewsletters((prev) => prev.filter((c) => c.id !== id));
+      refresh();
       toast.success('Newsletters deleted');
     } catch {
       toast.error('Failed to delete newsletters');
@@ -38,10 +42,10 @@ export default function AdminNewslettersPage() {
 
   const handleToggle = async (newsletter: Newsletter) => {
     try {
-      const { data } = await api.patch(`/newsletters/${newsletter.id}`, {
+      await api.patch(`/newsletters/${newsletter.id}`, {
         isActive: !newsletter.isActive,
       });
-      setNewsletters((prev) => prev.map((c) => (c.id === data.id ? data : c)));
+      refresh();
     } catch {
       toast.error('Failed to update newsletters');
     }
@@ -49,15 +53,27 @@ export default function AdminNewslettersPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center gap-3">
         <h1 className="text-2xl font-bold text-gray-900">Newsletters</h1>
+        {meta && (
+          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-600">
+            {meta.total}
+          </span>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-lg border bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs font-semibold uppercase text-gray-500">
             <tr>
-              <th className="px-4 py-3">Email</th>
+              <SortableHeader
+                label="Email"
+                field="email"
+                currentSort={sort}
+                currentOrder={order}
+                onSortAction={setSort}
+                className="px-4 py-3"
+              />
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
@@ -110,6 +126,19 @@ export default function AdminNewslettersPage() {
             )}
           </tbody>
         </table>
+        {/* ── PAGINATION ───────────────────────────── */}
+        {meta && (
+          <AdminPagination
+            page={meta.page}
+            lastPage={meta.lastPage}
+            total={meta.total}
+            limit={limit}
+            hasNextPage={meta.hasNextPage}
+            hasPrevPage={meta.hasPrevPage}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+          />
+        )}
       </div>
     </div>
   );

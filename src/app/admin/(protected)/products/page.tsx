@@ -1,42 +1,57 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { Product, PaginatedResponse } from '@/lib/types';
+import { Product } from '@/lib/types';
 import { toast } from 'sonner';
-import { Plus, Edit2, Trash2, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { useAdminTable } from '@/hooks/useAdminTable';
+import AdminSearch from '@/components/admin/table/AdminSearch';
+import SortableHeader from '@/components/admin/table/SortableHeader';
+import AdminPagination from '@/components/admin/table/AdminPagination';
+
+const STATUS_OPTIONS = [
+  {
+    key: 'All',
+    value: '',
+  },
+  {
+    key: 'Active',
+    value: 'true',
+  },
+  {
+    key: 'Inactive',
+    value: 'false',
+  },
+];
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.get<PaginatedResponse<Product>>('/products', {
-        params: { limit: 50, search: search || undefined },
-      });
-      setProducts(data.data);
-    } catch {
-      toast.error('Failed to load products');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    Promise.resolve().then(() => void fetchProducts());
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const {
+    data: products,
+    meta,
+    loading,
+    limit,
+    search,
+    sort,
+    order,
+    setFilter,
+    setPage,
+    setSearch,
+    setSort,
+    setLimit,
+    refresh,
+  } = useAdminTable<Product>({
+    endpoint: '/products/admin/all',
+    defaultSort: 'createdAt',
+  });
 
   const handleDelete = async (id: number, name: string) => {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
 
     try {
       await api.delete(`/products/${id}`);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+      refresh();
       toast.success('Product deleted');
     } catch {
       toast.error('Failed to delete product');
@@ -46,7 +61,14 @@ export default function AdminProductsPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+        <div className="mb-6 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+          {meta && (
+            <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-600">
+              {meta.total}
+            </span>
+          )}
+        </div>
         <Link
           href="/admin/products/new"
           className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
@@ -56,31 +78,47 @@ export default function AdminProductsPage() {
         </Link>
       </div>
 
-      {/* search */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          fetchProducts();
-        }}
-        className="mb-4 flex gap-2"
-      >
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products..."
-            className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+      {/* ── TOOLBAR ─────────────────────────────────── */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        {/* search */}
+        <AdminSearch
+          value={search}
+          onChangeAction={setSearch}
+          placeholder="Search for products..."
+        />
+
+        {/* status filter tabs */}
+        <div className="flex gap-1.5 overflow-x-auto">
+          {STATUS_OPTIONS.map((status, index) => (
+            <button
+              key={index}
+              onClick={() => setFilter('status', status.value || null)}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                (new URLSearchParams(window?.location?.search || '').get('status') || '') ===
+                status.value
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {status.key || 'All'}
+            </button>
+          ))}
         </div>
-      </form>
+      </div>
 
       {/* table */}
       <div className="overflow-hidden rounded-lg border bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs font-semibold uppercase text-gray-500">
             <tr>
-              <th className="px-4 py-3">Product</th>
+              <SortableHeader
+                label="Products"
+                field="name"
+                currentSort={sort}
+                currentOrder={order}
+                onSortAction={setSort}
+                className="px-4 py-3"
+              />
               <th className="px-4 py-3">Category</th>
               <th className="px-4 py-3">Price</th>
               <th className="px-4 py-3">Stock</th>
@@ -164,6 +202,19 @@ export default function AdminProductsPage() {
             )}
           </tbody>
         </table>
+        {/* ── PAGINATION ───────────────────────────── */}
+        {meta && (
+          <AdminPagination
+            page={meta.page}
+            lastPage={meta.lastPage}
+            total={meta.total}
+            limit={limit}
+            hasNextPage={meta.hasNextPage}
+            hasPrevPage={meta.hasPrevPage}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+          />
+        )}
       </div>
     </div>
   );

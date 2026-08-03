@@ -107,10 +107,10 @@ api.interceptors.response.use(
         );
 
         // save new tokens
-        setTokens(data.accessToken, data.refreshToken ?? refreshToken);
+        setTokens(data.access_token, data.refresh_token ?? refreshToken);
 
         // retry original request
-        original.headers.Authorization = `Bearer ${data.accessToken}`;
+        original.headers.Authorization = `Bearer ${data.access_token}`;
         return api(original);
       } catch {
         // refresh failed — clear everything

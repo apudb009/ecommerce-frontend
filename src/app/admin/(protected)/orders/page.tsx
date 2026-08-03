@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import api from '@/lib/api';
-import { Order, OrderStatus, PaginatedResponse } from '@/lib/types';
-import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { useAdminTable } from '@/hooks/useAdminTable';
+import AdminSearch from '@/components/admin/table/AdminSearch';
+import AdminPagination from '@/components/admin/table/AdminPagination';
+import SortableHeader from '@/components/admin/table/SortableHeader';
+import { Order, OrderStatus, User } from '@/lib/types';
+import { ShoppingBag } from 'lucide-react';
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   PENDING: 'bg-yellow-100 text-yellow-700',
@@ -17,75 +19,122 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   REFUNDED: 'bg-gray-100 text-gray-700',
 };
 
-export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<(Order & { user: any })[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('');
+const STATUS_OPTIONS = [
+  '',
+  'PENDING',
+  'PAID',
+  'PROCESSING',
+  'SHIPPED',
+  'DELIVERED',
+  'CANCELLED',
+  'REFUNDED',
+];
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true);
-      try {
-        const { data } = await api.get<PaginatedResponse<Order & { user: any }>>(
-          '/orders/admin/all',
-          { params: { limit: 50, status: statusFilter || undefined } },
-        );
-        setOrders(data.data);
-      } catch {
-        toast.error('Failed to load orders');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, [statusFilter]);
+export default function AdminOrdersClient() {
+  const {
+    data: orders,
+    meta,
+    loading,
+    limit,
+    search,
+    sort,
+    order,
+    setPage,
+    setSearch,
+    setFilter,
+    setSort,
+    setLimit,
+  } = useAdminTable<Order & { user: User }>({
+    endpoint: '/orders/admin/all',
+    defaultSort: 'createdAt',
+  });
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Orders</h1>
+      <div className="mb-6 flex items-center gap-3">
+        <ShoppingBag className="h-6 w-6 text-blue-600" />
+        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
+        {meta && (
+          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-600">
+            {meta.total}
+          </span>
+        )}
+      </div>
 
-      {/* status filter */}
-      <div className="mb-4 flex gap-2 overflow-x-auto">
-        {['', 'PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map(
-          (status) => (
+      {/* ── TOOLBAR ─────────────────────────────────── */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        {/* search */}
+        <AdminSearch
+          value={search}
+          onChangeAction={setSearch}
+          placeholder="Search by order ID, customer..."
+        />
+
+        {/* status filter tabs */}
+        <div className="flex gap-1.5 overflow-x-auto">
+          {STATUS_OPTIONS.map((status) => (
             <button
               key={status}
-              onClick={() => setStatusFilter(status as OrderStatus | '')}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${
-                statusFilter === status
+              onClick={() => setFilter('status', status || null)}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                (new URLSearchParams(window?.location?.search || '').get('status') || '') === status
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               {status || 'All'}
             </button>
-          ),
-        )}
+          ))}
+        </div>
       </div>
 
+      {/* ── TABLE ───────────────────────────────────── */}
       <div className="overflow-hidden rounded-lg border bg-white">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs font-semibold uppercase text-gray-500">
+          <thead className="bg-gray-50 text-left">
             <tr>
-              <th className="px-4 py-3">Order ID</th>
-              <th className="px-4 py-3">Customer</th>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Total</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3"></th>
+              <SortableHeader
+                label="Order"
+                field="id"
+                currentSort={sort}
+                currentOrder={order}
+                onSortAction={setSort}
+                className="w-24"
+              />
+              <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Customer</th>
+              <SortableHeader
+                label="Date"
+                field="createdAt"
+                currentSort={sort}
+                currentOrder={order}
+                onSortAction={setSort}
+              />
+              <SortableHeader
+                label="Total"
+                field="totalAmount"
+                currentSort={sort}
+                currentOrder={order}
+                onSortAction={setSort}
+              />
+              <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Status</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y">
             {loading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                  Loading...
-                </td>
-              </tr>
+              Array.from({ length: limit }).map((_, i) => (
+                <tr key={i}>
+                  {Array.from({ length: 6 }).map((_, j) => (
+                    <td key={j} className="px-4 py-3">
+                      <div className="h-4 animate-pulse rounded bg-gray-100" />
+                    </td>
+                  ))}
+                </tr>
+              ))
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
+                  <ShoppingBag className="mx-auto mb-2 h-8 w-8 text-gray-200" />
                   No orders found
                 </td>
               </tr>
@@ -93,13 +142,21 @@ export default function AdminOrdersPage() {
               orders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-gray-900">#{order.id}</td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {order.user?.name || order.user?.username}
+                  <td className="px-4 py-3">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {order.user?.name || order.user?.username}
+                      </p>
+                      <p className="text-xs text-gray-400">{order.user?.email}</p>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-gray-500">
                     {format(new Date(order.createdAt), 'MMM d, yyyy')}
+                    <p className="text-xs text-gray-400">
+                      {format(new Date(order.createdAt), 'h:mm a')}
+                    </p>
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-900">
+                  <td className="px-4 py-3 font-semibold text-gray-900">
                     ${Number(order.totalAmount).toFixed(2)}
                   </td>
                   <td className="px-4 py-3">
@@ -114,7 +171,7 @@ export default function AdminOrdersPage() {
                       href={`/admin/orders/${order.id}`}
                       className="text-sm font-medium text-blue-600 hover:underline"
                     >
-                      View
+                      View →
                     </Link>
                   </td>
                 </tr>
@@ -122,6 +179,20 @@ export default function AdminOrdersPage() {
             )}
           </tbody>
         </table>
+
+        {/* ── PAGINATION ───────────────────────────── */}
+        {meta && (
+          <AdminPagination
+            page={meta.page}
+            lastPage={meta.lastPage}
+            total={meta.total}
+            limit={limit}
+            hasNextPage={meta.hasNextPage}
+            hasPrevPage={meta.hasPrevPage}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+          />
+        )}
       </div>
     </div>
   );

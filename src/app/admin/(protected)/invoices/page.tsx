@@ -1,11 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Download } from 'lucide-react';
 import { Invoice } from '@/lib/types';
+import { useAdminTable } from '@/hooks/useAdminTable';
+import SortableHeader from '@/components/admin/table/SortableHeader';
+import AdminPagination from '@/components/admin/table/AdminPagination';
+import AdminSearch from '@/components/admin/table/AdminSearch';
 
 const STATUS_COLORS = {
   PAID: 'bg-green-100 text-green-700',
@@ -13,24 +17,29 @@ const STATUS_COLORS = {
   CANCELLED: 'bg-red-100 text-red-700',
 };
 
-export default function AdminInvoicesPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState<number | null>(null);
+const STATUS_OPTIONS = ['', 'PAID', 'UNPAID', 'CANCELLED'];
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const { data } = await api.get('/invoices/admin/all');
-        setInvoices(data);
-      } catch {
-        toast.error('Failed to load invoices');
-      } finally {
-        setLoading(false);
-      }
-    };
-    void load();
-  }, []);
+export default function AdminInvoicesPage() {
+  const {
+    data: invoices,
+    meta,
+    loading,
+    limit,
+    search,
+    sort,
+    order,
+    setPage,
+    setSearch,
+    setFilter,
+    setSort,
+    setLimit,
+    refresh,
+  } = useAdminTable<Invoice>({
+    endpoint: '/invoices/admin/all',
+    defaultSort: 'issuedAt',
+  });
+
+  const [downloading, setDownloading] = useState<number | null>(null);
 
   const handleDownload = async (invoice: Invoice) => {
     setDownloading(invoice.id);
@@ -56,10 +65,8 @@ export default function AdminInvoicesPage() {
 
   const handleStatusChange = async (id: number, status: string) => {
     try {
-      const { data } = await api.patch(`/invoices/${id}/status`, { status });
-      setInvoices((prev) =>
-        prev.map((inv) => (inv.id === id ? { ...inv, status: data.status } : inv)),
-      );
+      await api.patch(`/invoices/${id}/status`, { status });
+      refresh();
       toast.success('Status updated');
     } catch {
       toast.error('Failed to update status');
@@ -68,15 +75,63 @@ export default function AdminInvoicesPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Invoices</h1>
+      <div className="mb-6 flex items-center gap-3">
+        <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+        {meta && (
+          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-600">
+            {meta.total}
+          </span>
+        )}
+      </div>
+
+      {/* ── TOOLBAR ─────────────────────────────────── */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        {/* search */}
+        <AdminSearch
+          value={search}
+          onChangeAction={setSearch}
+          placeholder="Search by order ID, customer..."
+        />
+
+        {/* status filter tabs */}
+        <div className="flex gap-1.5 overflow-x-auto">
+          {STATUS_OPTIONS.map((status) => (
+            <button
+              key={status}
+              onClick={() => setFilter('status', status || null)}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                (new URLSearchParams(window?.location?.search || '').get('status') || '') === status
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {status || 'All'}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="overflow-hidden rounded-lg border bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs font-semibold uppercase text-gray-500">
             <tr>
-              <th className="px-4 py-3">Invoice</th>
+              <SortableHeader
+                label="Invoice"
+                field="id"
+                currentSort={sort}
+                currentOrder={order}
+                onSortAction={setSort}
+                className="px-4 py-3"
+              />
               <th className="px-4 py-3">Customer</th>
-              <th className="px-4 py-3">Order</th>
+              <SortableHeader
+                label="Order"
+                field="orderId"
+                currentSort={sort}
+                currentOrder={order}
+                onSortAction={setSort}
+                className="px-4 py-3"
+              />
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Amount</th>
               <th className="px-4 py-3">Status</th>
@@ -88,6 +143,12 @@ export default function AdminInvoicesPage() {
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                   Loading...
+                </td>
+              </tr>
+            ) : !invoices.length ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                  No invoices found.
                 </td>
               </tr>
             ) : (
@@ -130,6 +191,19 @@ export default function AdminInvoicesPage() {
             )}
           </tbody>
         </table>
+        {/* ── PAGINATION ───────────────────────────── */}
+        {meta && (
+          <AdminPagination
+            page={meta.page}
+            lastPage={meta.lastPage}
+            total={meta.total}
+            limit={limit}
+            hasNextPage={meta.hasNextPage}
+            hasPrevPage={meta.hasPrevPage}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+          />
+        )}
       </div>
     </div>
   );

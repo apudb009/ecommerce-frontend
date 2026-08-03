@@ -205,6 +205,21 @@ export interface CouponResult {
   };
 }
 
+export type CouponType = 'PERCENTAGE' | 'FIXED';
+
+export interface Coupon {
+  id: number;
+  code: string;
+  type: CouponType;
+  value: number;
+  minOrderAmount: number | null;
+  maxUses?: number;
+  usedCount: number;
+  perUserLimit: string | null;
+  expiresAt: string | null;
+  isActive: boolean;
+}
+
 export interface OverviewAnalitics {
   lowStockProducts: number;
   pendingOrders: number;

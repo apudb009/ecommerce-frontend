@@ -1,49 +1,55 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
-import { Plus, Edit2, Trash2, Tag } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Coupon, CouponType } from '@/lib/types';
+import { useAdminTable } from '@/hooks/useAdminTable';
+import AdminSearch from '@/components/admin/table/AdminSearch';
+import AdminPagination from '@/components/admin/table/AdminPagination';
+import SortableHeader from '@/components/admin/table/SortableHeader';
 
 export default function AdminCouponsPage() {
-  const [coupons, setCoupons] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: coupons,
+    meta,
+    loading,
+    limit,
+    search,
+    sort,
+    order,
+    setPage,
+    setSearch,
+    setSort,
+    setLimit,
+    refresh,
+  } = useAdminTable<Coupon>({
+    endpoint: '/coupons',
+    defaultSort: 'createdAt',
+  });
+
   const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
-
-  const fetchCoupons = async () => {
-    try {
-      const { data } = await api.get('/coupons');
-      setCoupons(data);
-    } catch {
-      toast.error('Failed to load coupons');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void fetchCoupons();
-  }, []);
+  const [editing, setEditing] = useState<Coupon | null>(null);
 
   const handleDelete = async (id: number, code: string) => {
     if (!confirm(`Delete coupon "${code}"?`)) return;
     try {
       await api.delete(`/coupons/${id}`);
-      setCoupons((prev) => prev.filter((c) => c.id !== id));
+      refresh();
       toast.success('Coupon deleted');
     } catch {
       toast.error('Failed to delete coupon');
     }
   };
 
-  const handleToggle = async (coupon: any) => {
+  const handleToggle = async (coupon: Coupon) => {
     try {
-      const { data } = await api.patch(`/coupons/${coupon.id}`, {
+      await api.patch(`/coupons/${coupon.id}`, {
         isActive: !coupon.isActive,
       });
-      setCoupons((prev) => prev.map((c) => (c.id === data.id ? data : c)));
+      refresh();
     } catch {
       toast.error('Failed to update coupon');
     }
@@ -52,7 +58,14 @@ export default function AdminCouponsPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Coupons</h1>
+        <div className="mb-6 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900">Coupons</h1>
+          {meta && (
+            <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-600">
+              {meta.total}
+            </span>
+          )}
+        </div>
         <button
           onClick={() => {
             setEditing(null);
@@ -64,12 +77,27 @@ export default function AdminCouponsPage() {
           New Coupon
         </button>
       </div>
-
+      {/* ── TOOLBAR ─────────────────────────────────── */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        {/* search */}
+        <AdminSearch
+          value={search}
+          onChangeAction={setSearch}
+          placeholder="Search by coupon code..."
+        />
+      </div>
       <div className="overflow-hidden rounded-lg border bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs font-semibold uppercase text-gray-500">
             <tr>
-              <th className="px-4 py-3">Code</th>
+              <SortableHeader
+                label="Code"
+                field="code"
+                currentSort={sort}
+                currentOrder={order}
+                onSortAction={setSort}
+                className="px-4 py-3"
+              />
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Value</th>
               <th className="px-4 py-3">Uses</th>
@@ -142,17 +170,30 @@ export default function AdminCouponsPage() {
             )}
           </tbody>
         </table>
+        {/* ── PAGINATION ───────────────────────────── */}
+        {meta && (
+          <AdminPagination
+            page={meta.page}
+            lastPage={meta.lastPage}
+            total={meta.total}
+            limit={limit}
+            hasNextPage={meta.hasNextPage}
+            hasPrevPage={meta.hasPrevPage}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+          />
+        )}
       </div>
 
       {showModal && (
         <CouponModal
           coupon={editing}
           onClose={() => setShowModal(false)}
-          onSaved={(c) => {
+          onSaved={() => {
             if (editing) {
-              setCoupons((prev) => prev.map((x) => (x.id === c.id ? c : x)));
+              refresh();
             } else {
-              setCoupons((prev) => [c, ...prev]);
+              refresh();
             }
             setShowModal(false);
           }}
@@ -167,9 +208,9 @@ function CouponModal({
   onClose,
   onSaved,
 }: {
-  coupon: any;
+  coupon: Coupon | null;
   onClose: () => void;
-  onSaved: (c: any) => void;
+  onSaved: (c: Coupon) => void;
 }) {
   const isEdit = !!coupon;
   const [form, setForm] = useState({
@@ -205,6 +246,7 @@ function CouponModal({
         : await api.post('/coupons', payload);
       toast.success(isEdit ? 'Coupon updated' : 'Coupon created');
       onSaved(data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to save coupon');
     } finally {
@@ -238,7 +280,7 @@ function CouponModal({
               <label className="mb-1 block text-xs font-medium text-gray-600">Type</label>
               <select
                 value={form.type}
-                onChange={(e) => setForm({ ...form, type: e.target.value })}
+                onChange={(e) => setForm({ ...form, type: e.target.value as CouponType })}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="PERCENTAGE">Percentage (%)</option>
