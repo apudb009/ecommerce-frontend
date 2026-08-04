@@ -20,6 +20,7 @@ import {
   Clock,
   Settings,
   Zap,
+  Shield,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -40,6 +41,7 @@ const NAV_ITEMS = [
   { label: 'Scheduler', href: '/admin/scheduler', icon: Clock },
   { label: 'Settings', href: '/admin/settings', icon: Settings },
   { label: 'Flash Sales', href: '/admin/flash-sales', icon: Zap },
+  { label: 'Roles', href: '/admin/roles', icon: Shield },
 ];
 
 export default function AdminSidebar() {

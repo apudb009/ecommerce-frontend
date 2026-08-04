@@ -1,10 +1,9 @@
-export type Role = 'CUSTOMER' | 'ADMIN';
 export interface User {
   id: number;
   email: string;
   username: string;
   name: string | null;
-  role: Role;
+  role: string;
 }
 
 export interface Category {
@@ -444,4 +443,21 @@ export interface SearchParam {
   colors?: string;
   sortBy: string;
   sortOrder: string;
+}
+
+export interface Permission {
+  id: number;
+  module: string;
+  action: string;
+  description?: string;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description: string | null;
+  permissions: Permission[];
+  isSystem: boolean;
+  users: User[];
+  _count?: { users: number };
 }
