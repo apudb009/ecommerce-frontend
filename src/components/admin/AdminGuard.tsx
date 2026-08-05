@@ -16,7 +16,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
         router.replace('/admin/login');
         return;
       }
-      if (user.role !== 'ADMIN') {
+      if (user.role === 'CUSTOMER') {
         router.replace('/products');
         return;
       }

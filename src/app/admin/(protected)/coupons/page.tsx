@@ -10,6 +10,8 @@ import { useAdminTable } from '@/hooks/useAdminTable';
 import AdminSearch from '@/components/admin/table/AdminSearch';
 import AdminPagination from '@/components/admin/table/AdminPagination';
 import SortableHeader from '@/components/admin/table/SortableHeader';
+import { useAuthStore } from '@/store/authStore';
+import { hasPermission } from '@/helpers/checkPermission';
 
 export default function AdminCouponsPage() {
   const {
@@ -30,6 +32,7 @@ export default function AdminCouponsPage() {
     defaultSort: 'createdAt',
   });
 
+  const { permissions } = useAuthStore();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Coupon | null>(null);
 
@@ -66,16 +69,18 @@ export default function AdminCouponsPage() {
             </span>
           )}
         </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setShowModal(true);
-          }}
-          className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          New Coupon
-        </button>
+        {hasPermission(permissions, 'coupons', 'create') && (
+          <button
+            onClick={() => {
+              setEditing(null);
+              setShowModal(true);
+            }}
+            className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" />
+            New Coupon
+          </button>
+        )}
       </div>
       {/* ── TOOLBAR ─────────────────────────────────── */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -135,34 +140,40 @@ export default function AdminCouponsPage() {
                     {coupon.expiresAt ? format(new Date(coupon.expiresAt), 'MMM d, yyyy') : 'Never'}
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => handleToggle(coupon)}
-                      className={`rounded-full px-2 py-1 text-xs font-medium ${
-                        coupon.isActive
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
-                      {coupon.isActive ? 'Active' : 'Inactive'}
-                    </button>
+                    {hasPermission(permissions, 'coupons', 'update') && (
+                      <button
+                        onClick={() => handleToggle(coupon)}
+                        className={`rounded-full px-2 py-1 text-xs font-medium ${
+                          coupon.isActive
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {coupon.isActive ? 'Active' : 'Inactive'}
+                      </button>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <button
-                        onClick={() => {
-                          setEditing(coupon);
-                          setShowModal(true);
-                        }}
-                        className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(coupon.id, coupon.code)}
-                        className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {hasPermission(permissions, 'coupons', 'update') && (
+                        <button
+                          onClick={() => {
+                            setEditing(coupon);
+                            setShowModal(true);
+                          }}
+                          className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                      )}
+                      {hasPermission(permissions, 'coupons', 'delete') && (
+                        <button
+                          onClick={() => handleDelete(coupon.id, coupon.code)}
+                          className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

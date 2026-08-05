@@ -9,6 +9,8 @@ import { useAdminTable } from '@/hooks/useAdminTable';
 import SortableHeader from '@/components/admin/table/SortableHeader';
 import AdminPagination from '@/components/admin/table/AdminPagination';
 import AdminSearch from '@/components/admin/table/AdminSearch';
+import { useAuthStore } from '@/store/authStore';
+import { hasPermission } from '@/helpers/checkPermission';
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-700',
@@ -39,8 +41,15 @@ export default function AdminReturnsPage() {
     defaultSort: 'createdAt',
   });
 
+  const { permissions } = useAuthStore();
+
   const handleUpdateStatus = async (id: number, status: string, adminNote?: string) => {
     try {
+      const hasActionPermission = hasPermission(permissions, 'returns', 'update');
+      if (!hasActionPermission) {
+        toast.error('You do not have permission to update return status');
+        return;
+      }
       await api.patch(`/returns/${id}/status`, { status, adminNote });
       refresh();
       toast.success('Status updated');
@@ -137,7 +146,7 @@ export default function AdminReturnsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {r.status === 'PENDING' && (
+                    {r.status === 'PENDING' && hasPermission(permissions, 'returns', 'update') && (
                       <div className="flex justify-end gap-1">
                         <button
                           onClick={() => handleUpdateStatus(r.id, 'APPROVED')}
@@ -153,7 +162,7 @@ export default function AdminReturnsPage() {
                         </button>
                       </div>
                     )}
-                    {r.status === 'APPROVED' && (
+                    {r.status === 'APPROVED' && hasPermission(permissions, 'returns', 'update') && (
                       <button
                         onClick={() => handleUpdateStatus(r.id, 'REFUNDED')}
                         className="rounded-md bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700"

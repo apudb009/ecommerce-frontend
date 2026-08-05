@@ -7,8 +7,12 @@ import { Plus, Edit2, Trash2, Zap, X } from 'lucide-react';
 import { format } from 'date-fns';
 import CountdownTimer from '@/components/ui/CountdownTimer';
 import { FlashSale, FlashSaleProduct, Product } from '@/lib/types';
+import { useAuthStore } from '@/store/authStore';
+import { hasPermission } from '@/helpers/checkPermission';
+import Image from 'next/image';
 
 export default function FlashSalesClient() {
+  const { permissions } = useAuthStore();
   const [sales, setSales] = useState<FlashSale[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -57,16 +61,18 @@ export default function FlashSalesClient() {
           <Zap className="h-6 w-6 text-orange-500" />
           <h1 className="text-2xl font-bold text-gray-900">Flash Sales</h1>
         </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setShowModal(true);
-          }}
-          className="flex items-center gap-2 rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
-        >
-          <Plus className="h-4 w-4" />
-          New Flash Sale
-        </button>
+        {hasPermission(permissions, 'flash-sales', 'create') && (
+          <button
+            onClick={() => {
+              setEditing(null);
+              setShowModal(true);
+            }}
+            className="flex items-center gap-2 rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+          >
+            <Plus className="h-4 w-4" />
+            New Flash Sale
+          </button>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -127,21 +133,25 @@ export default function FlashSalesClient() {
                         <CountdownTimer endTime={sale.endTime} size="sm" />
                       </div>
                     )}
-                    <button
-                      onClick={() => {
-                        setEditing(sale);
-                        setShowModal(true);
-                      }}
-                      className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(sale.id)}
-                      className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {hasPermission(permissions, 'flash-sales', 'update') && (
+                      <button
+                        onClick={() => {
+                          setEditing(sale);
+                          setShowModal(true);
+                        }}
+                        className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                    )}
+                    {hasPermission(permissions, 'flash-sales', 'delete') && (
+                      <button
+                        onClick={() => handleDelete(sale.id)}
+                        className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -158,10 +168,12 @@ export default function FlashSalesClient() {
                           className="flex shrink-0 items-center gap-2 rounded-md border bg-gray-50 px-2 py-1.5"
                         >
                           {sp.product.images?.[0] && (
-                            <img
+                            <Image
                               src={sp.product.images[0]?.url}
                               alt=""
-                              className="h-8 w-8 rounded object-cover"
+                              className="h-8 w-8 rounded object-contain"
+                              width={32}
+                              height={32}
                             />
                           )}
                           <div>

@@ -7,6 +7,8 @@ import { Order, OrderStatus, Tracking } from '@/lib/types';
 import { toast } from 'sonner';
 import { ArrowLeft, Truck } from 'lucide-react';
 import OrderTimeline from '@/components/order/OrderTimeline';
+import { useAuthStore } from '@/store/authStore';
+import { hasPermission } from '@/helpers/checkPermission';
 
 const STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
   PENDING: ['PAID', 'CANCELLED'],
@@ -29,6 +31,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AdminOrderDetailPage() {
+  const { permissions } = useAuthStore();
   const params = useParams();
   const router = useRouter();
   const orderId = Number(params.id);
@@ -45,8 +48,8 @@ export default function AdminOrderDetailPage() {
   const fetchOrder = useCallback(async () => {
     try {
       const [orderRes, trackingRes] = await Promise.all([
-        api.get(`/orders/${orderId}`),
-        api.get(`/orders/${orderId}/tracking`),
+        api.get(`/orders/admin/${orderId}`),
+        api.get(`/orders/admin/${orderId}/tracking`),
       ]);
 
       setOrder(orderRes.data);
@@ -155,10 +158,11 @@ export default function AdminOrderDetailPage() {
       )}
 
       {/* status actions */}
-      {nextStatuses.length > 0 && (
+      {nextStatuses.length > 0 && hasPermission(permissions, 'orders', 'update') && (
         <div className="mb-6 rounded-lg border bg-white p-4">
           <h3 className="mb-3 text-sm font-semibold text-gray-700">Update Status</h3>
           {/* optional custom tracking message */}
+
           <button
             onClick={() => setShowTrackingForm((s) => !s)}
             className="mb-3 text-xs text-blue-600 hover:underline"
@@ -182,6 +186,7 @@ export default function AdminOrderDetailPage() {
               />
             </div>
           )}
+
           <div className="flex flex-wrap gap-2">
             {nextStatuses.map((status) => (
               <button
@@ -198,29 +203,31 @@ export default function AdminOrderDetailPage() {
       )}
 
       {/* ── TRACKING NUMBER ────────────────────────────── */}
-      <div className="rounded-lg border bg-white p-5">
-        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-gray-900">
-          <Truck className="h-4 w-4" />
-          Carrier Tracking Number
-        </h2>
-        <div className="flex gap-2">
-          <input
-            value={trackingNumber}
-            onChange={(e) => setTrackingNumber(e.target.value)}
-            placeholder="e.g. DHL1234567890"
-            className="flex-1 rounded-md border border-gray-300 px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            onClick={handleSaveTrackingNumber}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Save
-          </button>
+      {hasPermission(permissions, 'orders', 'update') && (
+        <div className="rounded-lg border bg-white p-5">
+          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-gray-900">
+            <Truck className="h-4 w-4" />
+            Carrier Tracking Number
+          </h2>
+          <div className="flex gap-2">
+            <input
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+              placeholder="e.g. DHL1234567890"
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={handleSaveTrackingNumber}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Save
+            </button>
+          </div>
+          <p className="mt-1 text-xs text-gray-400">
+            Visible to customer on their order tracking page
+          </p>
         </div>
-        <p className="mt-1 text-xs text-gray-400">
-          Visible to customer on their order tracking page
-        </p>
-      </div>
+      )}
 
       {/* items */}
       <div className="mb-6 rounded-lg border bg-white p-4">

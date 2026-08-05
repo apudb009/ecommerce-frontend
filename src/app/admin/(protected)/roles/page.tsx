@@ -7,8 +7,11 @@ import { toast } from 'sonner';
 import { Shield, Plus, Edit2, Trash2, Lock, Users } from 'lucide-react';
 import { MODULES, ACTIONS, MODULE_LABELS } from '@/lib/permissions.config';
 import { Permission, Role } from '@/lib/types';
+import { useAuthStore } from '@/store/authStore';
+import { hasPermission } from '@/helpers/checkPermission';
 
 export default function AdminRolesClient() {
+  const { permissions: userPermissions } = useAuthStore();
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,16 +58,18 @@ export default function AdminRolesClient() {
           <Shield className="h-6 w-6 text-purple-600" />
           <h1 className="text-2xl font-bold text-gray-900">Roles & Permissions</h1>
         </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setShowModal(true);
-          }}
-          className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
-        >
-          <Plus className="h-4 w-4" />
-          New Role
-        </button>
+        {hasPermission(userPermissions, 'roles', 'create') && (
+          <button
+            onClick={() => {
+              setEditing(null);
+              setShowModal(true);
+            }}
+            className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
+          >
+            <Plus className="h-4 w-4" />
+            New Role
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -75,97 +80,107 @@ export default function AdminRolesClient() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {roles.map((role) => (
-            <div
-              key={role.id}
-              className={`rounded-xl border bg-white p-5 shadow-sm ${
-                role.isSystem ? 'border-purple-200' : ''
-              }`}
-            >
-              {/* header */}
-              <div className="mb-3 flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-gray-900">{role.name}</h3>
-                    {role.isSystem && (
-                      <span className="flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
-                        <Lock className="h-2.5 w-2.5" />
-                        System
-                      </span>
+          {hasPermission(userPermissions, 'roles', 'read') ? (
+            roles.map((role) => (
+              <div
+                key={role.id}
+                className={`rounded-xl border bg-white p-5 shadow-sm ${
+                  role.isSystem ? 'border-purple-200' : ''
+                }`}
+              >
+                {/* header */}
+                <div className="mb-3 flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-gray-900">{role.name}</h3>
+                      {role.isSystem && (
+                        <span className="flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                          <Lock className="h-2.5 w-2.5" />
+                          System
+                        </span>
+                      )}
+                    </div>
+                    {role.description && (
+                      <p className="mt-0.5 text-xs text-gray-400">{role.description}</p>
+                    )}
+                    <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+                      <Users className="h-3 w-3" />
+                      {role._count?.users ?? 0} users
+                    </div>
+                  </div>
+
+                  <div className="flex gap-1">
+                    {hasPermission(userPermissions, 'roles', 'update') && (
+                      <button
+                        onClick={() => {
+                          setEditing(role);
+                          setShowModal(true);
+                        }}
+                        className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-blue-600"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                    )}
+                    {!role.isSystem && hasPermission(userPermissions, 'roles', 'delete') && (
+                      <button
+                        onClick={() => handleDelete(role.id, role.name)}
+                        className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     )}
                   </div>
-                  {role.description && (
-                    <p className="mt-0.5 text-xs text-gray-400">{role.description}</p>
-                  )}
-                  <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
-                    <Users className="h-3 w-3" />
-                    {role._count?.users ?? 0} users
+                </div>
+
+                {/* permissions grid */}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold text-gray-400">
+                    PERMISSIONS ({role.permissions?.length ?? 0})
+                  </p>
+                  <div className="max-h-40 overflow-y-auto">
+                    {MODULES.slice(0, 8).map((module) => {
+                      const modulePerms =
+                        role.permissions?.filter((rp: any) => rp.permission.module === module) ||
+                        [];
+                      if (modulePerms.length === 0) return null;
+
+                      return (
+                        <div key={module} className="flex items-center gap-2 py-0.5">
+                          <span className="w-24 shrink-0 text-xs text-gray-500">
+                            {MODULE_LABELS[module] || module}
+                          </span>
+                          <div className="flex gap-1">
+                            {ACTIONS.map((action) => {
+                              const hasPerm = modulePerms.some(
+                                (rp: any) => rp.permission.action === action,
+                              );
+                              return (
+                                <span
+                                  key={action}
+                                  className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                                    hasPerm
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-gray-100 text-gray-300'
+                                  }`}
+                                >
+                                  {action[0].toUpperCase()}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => {
-                      setEditing(role);
-                      setShowModal(true);
-                    }}
-                    className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-blue-600"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </button>
-                  {!role.isSystem && (
-                    <button
-                      onClick={() => handleDelete(role.id, role.name)}
-                      className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
               </div>
-
-              {/* permissions grid */}
-              <div className="space-y-1.5">
-                <p className="text-xs font-semibold text-gray-400">
-                  PERMISSIONS ({role.permissions?.length ?? 0})
-                </p>
-                <div className="max-h-40 overflow-y-auto">
-                  {MODULES.slice(0, 8).map((module) => {
-                    const modulePerms =
-                      role.permissions?.filter((rp: any) => rp.permission.module === module) || [];
-                    if (modulePerms.length === 0) return null;
-
-                    return (
-                      <div key={module} className="flex items-center gap-2 py-0.5">
-                        <span className="w-24 shrink-0 text-xs text-gray-500">
-                          {MODULE_LABELS[module] || module}
-                        </span>
-                        <div className="flex gap-1">
-                          {ACTIONS.map((action) => {
-                            const hasPerm = modulePerms.some(
-                              (rp: any) => rp.permission.action === action,
-                            );
-                            return (
-                              <span
-                                key={action}
-                                className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                                  hasPerm
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-gray-100 text-gray-300'
-                                }`}
-                              >
-                                {action[0].toUpperCase()}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+            ))
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <Lock className="h-6 w-6" />
+              <p className="text-sm text-red-500">You don&apos;t have permission to view roles</p>
             </div>
-          ))}
+          )}
         </div>
       )}
 

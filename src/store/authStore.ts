@@ -1,20 +1,32 @@
 import { create } from 'zustand';
-import { User } from '@/lib/types';
+import { User, UserPermission } from '@/lib/types';
 import { clearTokens } from '@/lib/api';
 
 interface AuthState {
   user: User | null;
   setUser: (user: User | null) => void;
   isAuthenticated: boolean;
+  permissions: UserPermission[];
   logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  setUser: (user) => set({ user }),
+  setUser: (user) =>
+    set({
+      user,
+      permissions: user
+        ? user.userRole.permissions.map((p) => ({
+            module: p.permission.module,
+            action: p.permission.action,
+          }))
+        : [],
+      isAuthenticated: !!user,
+    }),
   isAuthenticated: false,
+  permissions: [],
   logout: () => {
     clearTokens();
-    set({ user: null });
+    set({ user: null, permissions: [], isAuthenticated: false });
   },
 }));

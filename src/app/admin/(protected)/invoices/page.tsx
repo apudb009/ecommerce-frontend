@@ -10,6 +10,8 @@ import { useAdminTable } from '@/hooks/useAdminTable';
 import SortableHeader from '@/components/admin/table/SortableHeader';
 import AdminPagination from '@/components/admin/table/AdminPagination';
 import AdminSearch from '@/components/admin/table/AdminSearch';
+import { useAuthStore } from '@/store/authStore';
+import { hasPermission } from '@/helpers/checkPermission';
 
 const STATUS_COLORS = {
   PAID: 'bg-green-100 text-green-700',
@@ -39,6 +41,8 @@ export default function AdminInvoicesPage() {
     defaultSort: 'issuedAt',
   });
 
+  const { permissions } = useAuthStore();
+
   const [downloading, setDownloading] = useState<number | null>(null);
 
   const handleDownload = async (invoice: Invoice) => {
@@ -65,6 +69,11 @@ export default function AdminInvoicesPage() {
 
   const handleStatusChange = async (id: number, status: string) => {
     try {
+      const hasActionPermission = hasPermission(permissions, 'invoices', 'update');
+      if (!hasActionPermission) {
+        toast.error('You do not have permission to update invoice status');
+        return;
+      }
       await api.patch(`/invoices/${id}/status`, { status });
       refresh();
       toast.success('Status updated');

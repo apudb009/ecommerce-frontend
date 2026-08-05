@@ -1,9 +1,16 @@
+import { LucideProps } from 'lucide-react';
+import { ForwardRefExoticComponent, RefAttributes } from 'react';
+
 export interface User {
   id: number;
   email: string;
   username: string;
   name: string | null;
   role: string;
+  createdAt: string;
+  userRole: Role;
+  password?: string;
+  _count?: { orders: number; reviews: number; wishlist: number; addresses: number };
 }
 
 export interface Category {
@@ -452,12 +459,27 @@ export interface Permission {
   description?: string;
 }
 
+export type Permissions = Array<{ permission: Permission }>;
+
 export interface Role {
   id: number;
   name: string;
   description: string | null;
-  permissions: Permission[];
+  permissions: Permissions;
   isSystem: boolean;
   users: User[];
   _count?: { users: number };
+}
+
+export interface NavItem {
+  label: string;
+  href: string;
+  icon: ForwardRefExoticComponent<Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>>;
+  module?: string; // ← which permission module controls this
+  always?: boolean; // ← always show (no permission needed)
+}
+
+export interface UserPermission {
+  module: string;
+  action: string;
 }

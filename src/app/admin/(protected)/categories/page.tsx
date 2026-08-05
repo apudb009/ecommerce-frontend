@@ -5,8 +5,11 @@ import api from '@/lib/api';
 import { Category } from '@/lib/types';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { hasPermission } from '@/helpers/checkPermission';
 
 export default function AdminCategoriesPage() {
+  const { permissions } = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -56,16 +59,18 @@ export default function AdminCategoriesPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setShowModal(true);
-          }}
-          className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          Add Category
-        </button>
+        {hasPermission(permissions, 'categories', 'create') && (
+          <button
+            onClick={() => {
+              setEditing(null);
+              setShowModal(true);
+            }}
+            className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" />
+            Add Category
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -80,21 +85,25 @@ export default function AdminCategoriesPage() {
                 )}
               </div>
               <div className="flex gap-1">
-                <button
-                  onClick={() => {
-                    setEditing(cat);
-                    setShowModal(true);
-                  }}
-                  className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
-                >
-                  <Edit2 className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(cat.id, cat.name)}
-                  className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                {hasPermission(permissions, 'categories', 'update') && (
+                  <button
+                    onClick={() => {
+                      setEditing(cat);
+                      setShowModal(true);
+                    }}
+                    className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                {hasPermission(permissions, 'categories', 'delete') && (
+                  <button
+                    onClick={() => handleDelete(cat.id, cat.name)}
+                    className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           </div>

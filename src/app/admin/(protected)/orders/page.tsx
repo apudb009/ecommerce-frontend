@@ -8,6 +8,8 @@ import AdminPagination from '@/components/admin/table/AdminPagination';
 import SortableHeader from '@/components/admin/table/SortableHeader';
 import { Order, OrderStatus, User } from '@/lib/types';
 import { ShoppingBag } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { hasPermission } from '@/helpers/checkPermission';
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   PENDING: 'bg-yellow-100 text-yellow-700',
@@ -48,6 +50,8 @@ export default function AdminOrdersClient() {
     endpoint: '/orders/admin/all',
     defaultSort: 'createdAt',
   });
+
+  const { permissions } = useAuthStore();
 
   return (
     <div>
@@ -167,12 +171,14 @@ export default function AdminOrdersClient() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/orders/${order.id}`}
-                      className="text-sm font-medium text-blue-600 hover:underline"
-                    >
-                      View →
-                    </Link>
+                    {hasPermission(permissions, 'orders', 'read') && (
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="text-sm font-medium text-blue-600 hover:underline"
+                      >
+                        View →
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))

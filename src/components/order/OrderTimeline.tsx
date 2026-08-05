@@ -94,7 +94,7 @@ export default function OrderTimeline({
   trackingNumber?: string | null;
 }) {
   return (
-    <div className="rounded-lg border bg-white p-5">
+    <div className="rounded-lg border bg-white p-5 mb-4">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
           <Truck className="h-4 w-4" />

@@ -37,7 +37,7 @@ export default function LoginPage() {
       // redirect
       if (redirect?.startsWith('/') && !redirect.startsWith('/maintenance')) {
         router.push(redirect);
-      } else if (data.user.role === 'ADMIN') {
+      } else if (data.user.role !== 'CUSTOMER') {
         router.push('/admin/dashboard');
       } else {
         router.push('/');

@@ -5,6 +5,9 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
 import ImageUpload from '@/components/ui/ImageUpload';
+import { useAuthStore } from '@/store/authStore';
+import Image from 'next/image';
+import { hasPermission } from '@/helpers/checkPermission';
 
 interface Banner {
   id: number;
@@ -17,6 +20,7 @@ interface Banner {
 }
 
 export default function AdminBannersPage() {
+  const { permissions } = useAuthStore();
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Banner | null>(null);
@@ -62,25 +66,29 @@ export default function AdminBannersPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Banners</h1>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setShowForm(true);
-          }}
-          className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          Add Banner
-        </button>
+        {hasPermission(permissions, 'banners', 'create') && (
+          <button
+            onClick={() => {
+              setEditing(null);
+              setShowForm(true);
+            }}
+            className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" />
+            Add Banner
+          </button>
+        )}
       </div>
 
       <div className="space-y-3">
         {banners.map((banner) => (
           <div key={banner.id} className="flex items-center gap-4 rounded-lg border bg-white p-4">
-            <img
+            <Image
               src={banner.image}
               alt={banner.title}
-              className="h-16 w-28 rounded-md object-cover"
+              className="h-16 w-28 rounded-md object-contain"
+              width={112}
+              height={64}
             />
             <div className="flex-1">
               <p className="font-medium text-gray-900">{banner.title}</p>
@@ -88,32 +96,38 @@ export default function AdminBannersPage() {
               <p className="text-xs text-gray-400">Position: {banner.position}</p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleToggle(banner)}
-                className={`rounded-md p-1.5 ${
-                  banner.isActive
-                    ? 'text-green-600 hover:bg-green-50'
-                    : 'text-gray-400 hover:bg-gray-100'
-                }`}
-                title={banner.isActive ? 'Active' : 'Inactive'}
-              >
-                {banner.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              </button>
-              <button
-                onClick={() => {
-                  setEditing(banner);
-                  setShowForm(true);
-                }}
-                className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
-              >
-                <Edit2 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => handleDelete(banner.id)}
-                className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              {hasPermission(permissions, 'banners', 'update') && (
+                <button
+                  onClick={() => handleToggle(banner)}
+                  className={`rounded-md p-1.5 ${
+                    banner.isActive
+                      ? 'text-green-600 hover:bg-green-50'
+                      : 'text-gray-400 hover:bg-gray-100'
+                  }`}
+                  title={banner.isActive ? 'Active' : 'Inactive'}
+                >
+                  {banner.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
+              )}
+              {hasPermission(permissions, 'banners', 'update') && (
+                <button
+                  onClick={() => {
+                    setEditing(banner);
+                    setShowForm(true);
+                  }}
+                  className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </button>
+              )}
+              {hasPermission(permissions, 'banners', 'delete') && (
+                <button
+                  onClick={() => handleDelete(banner.id)}
+                  className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         ))}

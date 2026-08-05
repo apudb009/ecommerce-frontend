@@ -22,11 +22,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   const [loading, setLoading] = useState(true);
 
-  const {
-    fetchSettings,
-    isMaitenanceMode,
-    loading: settingsLoading,
-  } = useSettingsStore();
+  const { fetchSettings, isMaitenanceMode, loading: settingsLoading } = useSettingsStore();
 
   useEffect(() => {
     void fetchSettings();
@@ -50,7 +46,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       }
 
       const redirectAdmin = (role: string) => {
-        if (role === 'ADMIN' && !pathname.startsWith('/admin')) {
+        if (role !== 'CUSTOMER' && !pathname.startsWith('/admin')) {
           router.replace('/admin/dashboard');
           return true;
         }
@@ -82,7 +78,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         }
 
         if (isAuthOnly) {
-          router.replace(user.role === 'ADMIN' ? '/admin/dashboard' : '/home');
+          router.replace(user.role !== 'CUSTOMER' ? '/admin/dashboard' : '/home');
           setLoading(false);
           return;
         }
@@ -107,7 +103,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         }
 
         if (isAuthOnly) {
-          router.replace(data.role === 'ADMIN' ? '/admin/dashboard' : '/home');
+          router.replace(data.role !== 'CUSTOMER' ? '/admin/dashboard' : '/home');
           setLoading(false);
           return;
         }

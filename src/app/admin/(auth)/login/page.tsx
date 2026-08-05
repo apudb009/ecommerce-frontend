@@ -27,7 +27,7 @@ export default function LoginPage() {
 
       const { data: user } = await api.get('/user/me');
 
-      if (user.role !== 'ADMIN') {
+      if (user.role === 'CUSTOMER') {
         clearTokens();
         setUser(null);
         toast.error('Admin access required');
