@@ -15,12 +15,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   setUser: (user) =>
     set({
       user,
-      permissions: user
-        ? user.userRole.permissions.map((p) => ({
-            module: p.permission.module,
-            action: p.permission.action,
-          }))
-        : [],
+      permissions:
+        user && user.userRole && user.userRole.permissions
+          ? user.userRole.permissions.map((p) => ({
+              module: p.permission.module,
+              action: p.permission.action,
+            }))
+          : [],
       isAuthenticated: !!user,
     }),
   isAuthenticated: false,

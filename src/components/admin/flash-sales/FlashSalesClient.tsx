@@ -10,6 +10,7 @@ import { FlashSale, FlashSaleProduct, Product } from '@/lib/types';
 import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
 import Image from 'next/image';
+import DeleteModal from '@/components/ui/DeleteModal';
 
 export default function FlashSalesClient() {
   const { permissions } = useAuthStore();
@@ -17,6 +18,7 @@ export default function FlashSalesClient() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<FlashSale | null>(null);
+  const [activeSale, setActiveSale] = useState<FlashSale>();
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -33,13 +35,14 @@ export default function FlashSalesClient() {
   }, []);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this flash sale?')) return;
     try {
       await api.delete(`/flash-sales/${id}`);
       setSales((prev) => prev.filter((s) => s.id !== id));
       toast.success('Flash sale deleted');
     } catch {
       toast.error('Failed to delete');
+    } finally {
+      setActiveSale(undefined);
     }
   };
 
@@ -146,7 +149,7 @@ export default function FlashSalesClient() {
                     )}
                     {hasPermission(permissions, 'flash-sales', 'delete') && (
                       <button
-                        onClick={() => handleDelete(sale.id)}
+                        onClick={() => setActiveSale(sale)}
                         className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -228,6 +231,17 @@ export default function FlashSalesClient() {
           })
         )}
       </div>
+
+      {activeSale && (
+        <DeleteModal
+          isOpen={!!activeSale}
+          title="Delete Flash Sale"
+          text="Are you sure you want to delete this flash sale?"
+          loading={loading}
+          onClose={() => setActiveSale(undefined)}
+          onConfirm={() => handleDelete(activeSale.id)}
+        />
+      )}
 
       {showModal && (
         <FlashSaleModal

@@ -12,6 +12,7 @@ import AdminPagination from '@/components/admin/table/AdminPagination';
 import AdminSearch from '@/components/admin/table/AdminSearch';
 import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
+import RestrictedAccess from '@/components/admin/RestrictedAccess';
 
 const STATUS_COLORS = {
   PAID: 'bg-green-100 text-green-700',
@@ -93,127 +94,134 @@ export default function AdminInvoicesPage() {
         )}
       </div>
 
-      {/* ── TOOLBAR ─────────────────────────────────── */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        {/* search */}
-        <AdminSearch
-          value={search}
-          onChangeAction={setSearch}
-          placeholder="Search by order ID, customer..."
-        />
+      {hasPermission(permissions, 'invoices', 'read') ? (
+        <>
+          {/* ── TOOLBAR ─────────────────────────────────── */}
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            {/* search */}
+            <AdminSearch
+              value={search}
+              onChangeAction={setSearch}
+              placeholder="Search by order ID, customer..."
+            />
 
-        {/* status filter tabs */}
-        <div className="flex gap-1.5 overflow-x-auto">
-          {STATUS_OPTIONS.map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilter('status', status || null)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                (new URLSearchParams(window?.location?.search || '').get('status') || '') === status
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {status || 'All'}
-            </button>
-          ))}
-        </div>
-      </div>
+            {/* status filter tabs */}
+            <div className="flex gap-1.5 overflow-x-auto">
+              {STATUS_OPTIONS.map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setFilter('status', status || null)}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    (new URLSearchParams(window?.location?.search || '').get('status') || '') ===
+                    status
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {status || 'All'}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      <div className="overflow-hidden rounded-lg border bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs font-semibold uppercase text-gray-500">
-            <tr>
-              <SortableHeader
-                label="Invoice"
-                field="id"
-                currentSort={sort}
-                currentOrder={order}
-                onSortAction={setSort}
-                className="px-4 py-3"
-              />
-              <th className="px-4 py-3">Customer</th>
-              <SortableHeader
-                label="Order"
-                field="orderId"
-                currentSort={sort}
-                currentOrder={order}
-                onSortAction={setSort}
-                className="px-4 py-3"
-              />
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Amount</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {loading ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                  Loading...
-                </td>
-              </tr>
-            ) : !invoices.length ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                  No invoices found.
-                </td>
-              </tr>
-            ) : (
-              invoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{invoice.invoiceNo}</td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {invoice.user?.name || invoice.user?.email}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">#{invoice.order?.id}</td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {format(new Date(invoice.issuedAt), 'MMM d, yyyy')}
-                  </td>
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    ${Number(invoice.order?.grandTotalAmount).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <select
-                      value={invoice.status}
-                      onChange={(e) => handleStatusChange(invoice.id, e.target.value)}
-                      className={`rounded-full px-2 py-1 text-xs font-medium border-0 ${STATUS_COLORS[invoice.status as keyof typeof STATUS_COLORS]}`}
-                    >
-                      <option value="UNPAID">UNPAID</option>
-                      <option value="PAID">PAID</option>
-                      <option value="CANCELLED">CANCELLED</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => handleDownload(invoice)}
-                      disabled={downloading === invoice.id}
-                      className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 ml-auto"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      PDF
-                    </button>
-                  </td>
+          <div className="overflow-hidden rounded-lg border bg-white">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs font-semibold uppercase text-gray-500">
+                <tr>
+                  <SortableHeader
+                    label="Invoice"
+                    field="id"
+                    currentSort={sort}
+                    currentOrder={order}
+                    onSortAction={setSort}
+                    className="px-4 py-3"
+                  />
+                  <th className="px-4 py-3">Customer</th>
+                  <SortableHeader
+                    label="Order"
+                    field="orderId"
+                    currentSort={sort}
+                    currentOrder={order}
+                    onSortAction={setSort}
+                    className="px-4 py-3"
+                  />
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Amount</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
-              ))
+              </thead>
+              <tbody className="divide-y">
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : !invoices.length ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                      No invoices found.
+                    </td>
+                  </tr>
+                ) : (
+                  invoices.map((invoice) => (
+                    <tr key={invoice.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">{invoice.invoiceNo}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {invoice.user?.name || invoice.user?.email}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">#{invoice.order?.id}</td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {format(new Date(invoice.issuedAt), 'MMM d, yyyy')}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        ${Number(invoice.order?.grandTotalAmount).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={invoice.status}
+                          onChange={(e) => handleStatusChange(invoice.id, e.target.value)}
+                          className={`rounded-full px-2 py-1 text-xs font-medium border-0 ${STATUS_COLORS[invoice.status as keyof typeof STATUS_COLORS]}`}
+                        >
+                          <option value="UNPAID">UNPAID</option>
+                          <option value="PAID">PAID</option>
+                          <option value="CANCELLED">CANCELLED</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => handleDownload(invoice)}
+                          disabled={downloading === invoice.id}
+                          className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 ml-auto"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          PDF
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+            {/* ── PAGINATION ───────────────────────────── */}
+            {meta && (
+              <AdminPagination
+                page={meta.page}
+                lastPage={meta.lastPage}
+                total={meta.total}
+                limit={limit}
+                hasNextPage={meta.hasNextPage}
+                hasPrevPage={meta.hasPrevPage}
+                onPageChange={setPage}
+                onLimitChange={setLimit}
+              />
             )}
-          </tbody>
-        </table>
-        {/* ── PAGINATION ───────────────────────────── */}
-        {meta && (
-          <AdminPagination
-            page={meta.page}
-            lastPage={meta.lastPage}
-            total={meta.total}
-            limit={limit}
-            hasNextPage={meta.hasNextPage}
-            hasPrevPage={meta.hasPrevPage}
-            onPageChange={setPage}
-            onLimitChange={setLimit}
-          />
-        )}
-      </div>
+          </div>
+        </>
+      ) : (
+        <RestrictedAccess />
+      )}
     </div>
   );
 }

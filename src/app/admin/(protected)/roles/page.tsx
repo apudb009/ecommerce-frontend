@@ -9,6 +9,7 @@ import { MODULES, ACTIONS, MODULE_LABELS } from '@/lib/permissions.config';
 import { Permission, Role } from '@/lib/types';
 import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
+import DeleteModal from '@/components/ui/DeleteModal';
 
 export default function AdminRolesClient() {
   const { permissions: userPermissions } = useAuthStore();
@@ -17,6 +18,7 @@ export default function AdminRolesClient() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Role | null>(null);
+  const [activeRole, setActiveRole] = useState<Role>();
 
   const fetchData = async () => {
     try {
@@ -40,14 +42,15 @@ export default function AdminRolesClient() {
     load();
   }, []);
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Delete role "${name}"?`)) return;
+  const handleDelete = async (id: number) => {
     try {
       await api.delete(`/roles/${id}`);
       setRoles((prev) => prev.filter((r) => r.id !== id));
       toast.success('Role deleted');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to delete role');
+    } finally {
+      setActiveRole(undefined);
     }
   };
 
@@ -123,7 +126,7 @@ export default function AdminRolesClient() {
                     )}
                     {!role.isSystem && hasPermission(userPermissions, 'roles', 'delete') && (
                       <button
-                        onClick={() => handleDelete(role.id, role.name)}
+                        onClick={() => setActiveRole(role)}
                         className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -182,6 +185,16 @@ export default function AdminRolesClient() {
             </div>
           )}
         </div>
+      )}
+
+      {activeRole && (
+        <DeleteModal
+          isOpen={!!activeRole}
+          onClose={() => setActiveRole(undefined)}
+          title="Delete Role"
+          text={`Are you sure you want to delete this role "${activeRole.name}"?`}
+          onConfirm={() => handleDelete(activeRole.id)}
+        />
       )}
 
       {showModal && (

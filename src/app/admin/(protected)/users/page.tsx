@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
+import { format, set } from 'date-fns';
 import { useAdminTable } from '@/hooks/useAdminTable';
 import AdminSearch from '@/components/admin/table/AdminSearch';
 import AdminPagination from '@/components/admin/table/AdminPagination';
@@ -13,6 +13,7 @@ import { Role, User } from '@/lib/types';
 import { useRoleStore } from '@/store/roleStore';
 import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
+import DeleteModal from '@/components/ui/DeleteModal';
 
 const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-purple-100 text-purple-700',
@@ -47,7 +48,7 @@ export default function AdminUsersClient() {
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
-  const [deleting, setDeleting] = useState<number | null>(null);
+  const [activeUser, setActiveUser] = useState<User>();
 
   useEffect(() => {
     fetchRoles();
@@ -58,9 +59,7 @@ export default function AdminUsersClient() {
       ? new URLSearchParams(window.location.search).get('role') || ''
       : '';
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Delete user "${name}"? This action cannot be undone.`)) return;
-    setDeleting(id);
+  const handleDelete = async (id: number) => {
     try {
       await api.delete(`/user/admin/${id}`);
       toast.success('User deleted');
@@ -69,7 +68,7 @@ export default function AdminUsersClient() {
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to delete user');
     } finally {
-      setDeleting(null);
+      setActiveUser(undefined);
     }
   };
 
@@ -223,17 +222,16 @@ export default function AdminUsersClient() {
                           <Edit2 className="h-4 w-4" />
                         </button>
                       )}
-                      {hasPermission(permissions, 'users', 'delete') &&
-                        !user.userRole?.isSystem && (
-                          <button
-                            onClick={() => handleDelete(user.id, user.name || user.username)}
-                            disabled={deleting === user.id}
-                            className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600 disabled:opacity-50"
-                            title="Delete user"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+                      {hasPermission(permissions, 'users', 'delete') && (
+                        <button
+                          onClick={() => setActiveUser(user)}
+                          disabled={activeUser?.id === user.id || user?.userRole?.isSystem}
+                          className={`rounded-md p-1.5 text-gray-400 hover:bg-gray-100 ${!user?.userRole?.isSystem && 'hover:text-red-600'} disabled:opacity-50`}
+                          title="Delete user"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -270,6 +268,16 @@ export default function AdminUsersClient() {
             setShowModal(false);
             refresh();
           }}
+        />
+      )}
+
+      {activeUser && (
+        <DeleteModal
+          isOpen={!!activeUser}
+          title="Delete user"
+          text={`Are you sure you want to delete this user "${activeUser.name || activeUser.username}" ?`}
+          onConfirm={() => handleDelete(activeUser.id)}
+          onClose={() => setActiveUser(undefined)}
         />
       )}
 

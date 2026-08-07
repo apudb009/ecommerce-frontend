@@ -6,7 +6,9 @@ import api from '@/lib/api';
 import { Category, Product, ProductVariant } from '@/lib/types';
 import { toast } from 'sonner';
 import ImageUpload from '../ui/ImageUpload';
-import { Trash2, Edit2 } from 'lucide-react';
+import { Trash2, Edit2, FileExclamationPoint } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { hasPermission } from '@/helpers/checkPermission';
 
 type VariantFormState = {
   name: string;
@@ -19,6 +21,7 @@ type VariantFormState = {
 };
 
 export default function ProductForm({ product }: { product?: Product }) {
+  const { permissions } = useAuthStore();
   const router = useRouter();
   const isEdit = !!product;
 
@@ -192,6 +195,23 @@ export default function ProductForm({ product }: { product?: Product }) {
       toast.error('Failed to delete variant');
     }
   };
+
+  if (
+    !hasPermission(permissions, 'products', 'create') ||
+    !hasPermission(permissions, 'products', 'update')
+  ) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-2">
+            <FileExclamationPoint className="h-6 w-6 text-red-600" />
+            <span className="text-lg font-semibold text-red-600">Access Denied</span>
+          </div>
+          <span className="text-gray-600">You don&apos;t have permission to access this page</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

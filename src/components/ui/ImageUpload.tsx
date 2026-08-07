@@ -4,8 +4,9 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import api from '@/lib/api';
 import { toast } from 'sonner';
-import { Upload, X, Loader2, ImageIcon } from 'lucide-react';
+import { Upload, X, Loader2, ImageIcon, Info } from 'lucide-react';
 import { Product, ProductImage } from '@/lib/types';
+import Image from 'next/image';
 
 export default function ImageUpload({
   images,
@@ -13,12 +14,14 @@ export default function ImageUpload({
   onChange,
   maxImages = 5,
   folder = 'products',
+  hasPermission = true,
 }: {
   images: string[];
   product?: Product;
   onChange: (images: string[]) => void;
   maxImages?: number;
   folder?: string;
+  hasPermission?: boolean;
 }) {
   const mainImageInit = product?.images.findIndex((img) => img.isMain);
   const [uploading, setUploading] = useState(false);
@@ -87,7 +90,13 @@ export default function ImageUpload({
         <div className="grid grid-cols-4 gap-2">
           {images.map((url, i) => (
             <div key={i} className="group relative aspect-square">
-              <img src={url} alt="" className="h-full w-full rounded-lg object-cover" />
+              <Image
+                src={url}
+                alt=""
+                className="h-full w-full rounded-lg object-cover"
+                width={100}
+                height={100}
+              />
               <button
                 type="button"
                 onClick={() => removeImage(i)}
@@ -112,8 +121,17 @@ export default function ImageUpload({
         </div>
       )}
 
+      {!hasPermission && (
+        <div className="flex items-center justify-center p-4">
+          <Info className="mr-2 h-4 w-4 text-red-500" />
+          <p className="text-sm text-red-500">
+            You don&apos;t have permission to upload images for this product
+          </p>
+        </div>
+      )}
+
       {/* dropzone */}
-      {images.length < maxImages && (
+      {images.length < maxImages && hasPermission && (
         <div
           {...getRootProps()}
           className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition ${

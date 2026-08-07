@@ -5,9 +5,12 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Bell, Send, Users, Eye } from 'lucide-react';
 import { format } from 'date-fns';
-import { User, Notification } from '@/lib/types';
+import { User, Notification, UserPermission } from '@/lib/types';
+import { useAuthStore } from '@/store/authStore';
+import { hasPermission } from '@/helpers/checkPermission';
 
 export default function AdminNotificationsPage() {
+  const { permissions } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'send' | 'history'>('send');
 
   return (
@@ -42,14 +45,14 @@ export default function AdminNotificationsPage() {
         })}
       </div>
 
-      {activeTab === 'send' && <SendNotificationTab />}
-      {activeTab === 'history' && <NotificationHistoryTab />}
+      {activeTab === 'send' && <SendNotificationTab permissions={permissions} />}
+      {activeTab === 'history' && <NotificationHistoryTab permissions={permissions} />}
     </div>
   );
 }
 
 // ── SEND NOTIFICATION TAB ───────────────────────────
-function SendNotificationTab() {
+function SendNotificationTab({ permissions }: { permissions: UserPermission[] }) {
   const [form, setForm] = useState({
     title: '',
     message: '',
@@ -61,6 +64,10 @@ function SendNotificationTab() {
   const [preview, setPreview] = useState(false);
   const [userInfo, setUserInfo] = useState<User | null>(null);
   const [searching, setSearching] = useState(false);
+
+  const isPermitted = (type: 'create' | 'update' | 'delete' | 'read') => {
+    return hasPermission(permissions, 'notifications', type);
+  };
 
   const handleSearchUser = async () => {
     if (!form.userId.trim()) return;
@@ -173,7 +180,9 @@ function SendNotificationTab() {
                   type="radio"
                   value="all"
                   checked={form.target === 'all'}
-                  onChange={(e) => setForm({ ...form, target: e.target.value })}
+                  onChange={(e) =>
+                    isPermitted('create') && setForm({ ...form, target: e.target.value })
+                  }
                   className="text-blue-600"
                 />
                 <Users className="h-4 w-4" />
@@ -194,7 +203,9 @@ function SendNotificationTab() {
                   type="radio"
                   value="user"
                   checked={form.target === 'user'}
-                  onChange={(e) => setForm({ ...form, target: e.target.value })}
+                  onChange={(e) =>
+                    isPermitted('create') && setForm({ ...form, target: e.target.value })
+                  }
                   className="text-blue-600"
                 />
                 <Bell className="h-4 w-4" />
@@ -293,14 +304,14 @@ function SendNotificationTab() {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setPreview((s) => !s)}
+              onClick={() => isPermitted('create') && setPreview((s) => !s)}
               className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               {preview ? 'Hide Preview' : 'Preview'}
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isPermitted('create') === false}
               className="flex flex-1 items-center justify-center gap-2 rounded-md bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
             >
               <Send className="h-4 w-4" />
@@ -388,7 +399,7 @@ function SendNotificationTab() {
 }
 
 // ── NOTIFICATION HISTORY TAB ────────────────────────
-function NotificationHistoryTab() {
+function NotificationHistoryTab({ permissions }: { permissions: UserPermission[] }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -421,6 +432,15 @@ function NotificationHistoryTab() {
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 py-16 text-center">
         <Bell className="mb-3 h-10 w-10 text-gray-300" />
         <p className="text-gray-500">No notifications sent yet</p>
+      </div>
+    );
+  }
+
+  if (!hasPermission(permissions, 'notifications', 'read')) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 py-16 text-center">
+        <Bell className="mb-3 h-10 w-10 text-red-500" />
+        <p className="text-gray-500">You don&apos;t have permission to view notifications</p>
       </div>
     );
   }

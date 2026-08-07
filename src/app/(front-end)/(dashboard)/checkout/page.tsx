@@ -11,6 +11,7 @@ import AddressSelector from '@/components/checkout/AddressSelector';
 import PaymentForm from '@/components/checkout/PaymentForm';
 import { toast } from 'sonner';
 import { ShoppingBag, CheckCircle, Tag, X } from 'lucide-react';
+import Image from 'next/image';
 
 type Step = 'address' | 'payment' | 'success';
 
@@ -120,12 +121,12 @@ export default function CheckoutPage() {
   };
 
   const handleRemoveCoupon = async () => {
-    setCouponResult(null);
-    setCouponCode('');
-
     //update cart
     await api.patch('cart/remove-coupon');
     await fetchCart();
+
+    setCouponResult(null);
+    setCouponCode('');
   };
 
   // ── DERIVED AMOUNTS ─────────────────────────────────
@@ -325,10 +326,12 @@ export default function CheckoutPage() {
                 <div key={item.id} className="flex gap-3">
                   <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-gray-100">
                     {item.product.images?.[0] && (
-                      <img
+                      <Image
                         src={item.product.images[0].url}
                         alt=""
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain"
+                        width={48}
+                        height={48}
                       />
                     )}
                   </div>

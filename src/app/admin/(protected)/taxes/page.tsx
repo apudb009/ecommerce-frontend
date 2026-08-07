@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, Check } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
+import { hasPermission } from '@/helpers/checkPermission';
+import DeleteModal from '@/components/ui/DeleteModal';
 
 interface Tax {
   id: number;
@@ -17,39 +20,47 @@ interface Tax {
 type TaxType = Tax['type'];
 
 export default function AdminTaxesPage() {
+  const { permissions } = useAuthStore();
   const [taxes, setTaxes] = useState<Tax[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Tax | null>(null);
-
-  const fetchTaxes = async () => {
-    try {
-      const { data } = await api.get('/taxes');
-      setTaxes(data);
-    } catch {
-      toast.error('Failed to load taxes');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [activeTax, setActiveTax] = useState<Tax>();
 
   useEffect(() => {
+    const fetchTaxes = async () => {
+      try {
+        const { data } = await api.get('/taxes');
+        setTaxes(data);
+      } catch {
+        toast.error('Failed to load taxes');
+      } finally {
+        setLoading(false);
+      }
+    };
     void fetchTaxes();
   }, []);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this tax rate?')) return;
     try {
       await api.delete(`/taxes/${id}`);
       setTaxes((prev) => prev.filter((t) => t.id !== id));
       toast.success('Tax deleted');
     } catch {
       toast.error('Failed to delete tax');
+    } finally {
+      setActiveTax(undefined);
     }
   };
 
   const handleSetActive = async (tax: Tax) => {
     if (tax.isActive) return;
+    const hasAccess = hasPermission(permissions, 'taxes', 'update');
+
+    if (!hasAccess) {
+      toast.error('You do not have permission to update taxes');
+      return;
+    }
     try {
       const { data } = await api.patch(`/taxes/${tax.id}`, { isActive: true });
       // deactivate all then activate selected
@@ -67,16 +78,18 @@ export default function AdminTaxesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Tax Rates</h1>
           <p className="mt-1 text-sm text-gray-500">Only one tax rate can be active at a time</p>
         </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setShowModal(true);
-          }}
-          className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          Add Tax Rate
-        </button>
+        {hasPermission(permissions, 'taxes', 'create') && (
+          <button
+            onClick={() => {
+              setEditing(null);
+              setShowModal(true);
+            }}
+            className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" />
+            Add Tax Rate
+          </button>
+        )}
       </div>
 
       {/* active tax highlight */}
@@ -154,21 +167,25 @@ export default function AdminTaxesPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <button
-                        onClick={() => {
-                          setEditing(tax);
-                          setShowModal(true);
-                        }}
-                        className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(tax.id)}
-                        className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {hasPermission(permissions, 'taxes', 'update') && (
+                        <button
+                          onClick={() => {
+                            setEditing(tax);
+                            setShowModal(true);
+                          }}
+                          className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                      )}
+                      {hasPermission(permissions, 'taxes', 'delete') && (
+                        <button
+                          onClick={() => setActiveTax(tax)}
+                          className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -177,6 +194,16 @@ export default function AdminTaxesPage() {
           </tbody>
         </table>
       </div>
+
+      {activeTax && (
+        <DeleteModal
+          isOpen={!!activeTax}
+          title="Delete Tax"
+          text={`Are you sure you want to delete "${activeTax.name}"?`}
+          onClose={() => setActiveTax(undefined)}
+          onConfirm={() => handleDelete(activeTax.id)}
+        />
+      )}
 
       {showModal && (
         <TaxModal
@@ -237,6 +264,7 @@ function TaxModal({
         : await api.post('/taxes', payload);
       toast.success(isEdit ? 'Tax updated' : 'Tax created');
       onSaved(data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to save tax');
     } finally {

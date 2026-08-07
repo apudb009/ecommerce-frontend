@@ -483,3 +483,11 @@ export interface UserPermission {
   module: string;
   action: string;
 }
+
+export interface Shipping {
+  id: number;
+  name: string;
+  price: number;
+  isActive: boolean;
+  createdAt: string;
+}

@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
+import RestrictedAccess from '@/components/admin/RestrictedAccess';
+import DeleteModal from '@/components/ui/DeleteModal';
 
 export default function AdminCategoriesPage() {
   const { permissions } = useAuthStore();
@@ -14,6 +16,7 @@ export default function AdminCategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
+  const [activeCategory, setActiveCategory] = useState<Category>();
 
   const fetchCategories = async () => {
     try {
@@ -34,9 +37,7 @@ export default function AdminCategoriesPage() {
     loadCategories();
   }, []);
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Delete "${name}"?`)) return;
-
+  const handleDelete = async (id: number) => {
     try {
       await api.delete(`/categories/${id}`);
       setCategories((prev) => prev.filter((c) => c.id !== id));
@@ -44,6 +45,8 @@ export default function AdminCategoriesPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to delete');
+    } finally {
+      setActiveCategory(undefined);
     }
   };
 
@@ -73,42 +76,56 @@ export default function AdminCategoriesPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {categories.map((cat) => (
-          <div key={cat.id} className="rounded-lg border bg-white p-4 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-gray-900">{cat.name}</h3>
-                <p className="text-xs text-gray-400">/{cat.slug}</p>
-                {cat._count && (
-                  <p className="mt-1 text-xs text-gray-500">{cat._count.products} products</p>
-                )}
-              </div>
-              <div className="flex gap-1">
-                {hasPermission(permissions, 'categories', 'update') && (
-                  <button
-                    onClick={() => {
-                      setEditing(cat);
-                      setShowModal(true);
-                    }}
-                    className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
-                {hasPermission(permissions, 'categories', 'delete') && (
-                  <button
-                    onClick={() => handleDelete(cat.id, cat.name)}
-                    className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
+      {hasPermission(permissions, 'categories', 'read') ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {categories.map((cat) => (
+            <div key={cat.id} className="rounded-lg border bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{cat.name}</h3>
+                  <p className="text-xs text-gray-400">/{cat.slug}</p>
+                  {cat._count && (
+                    <p className="mt-1 text-xs text-gray-500">{cat._count.products} products</p>
+                  )}
+                </div>
+                <div className="flex gap-1">
+                  {hasPermission(permissions, 'categories', 'update') && (
+                    <button
+                      onClick={() => {
+                        setEditing(cat);
+                        setShowModal(true);
+                      }}
+                      className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {hasPermission(permissions, 'categories', 'delete') && (
+                    <button
+                      onClick={() => setActiveCategory(cat)}
+                      className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <RestrictedAccess />
+      )}
+
+      {activeCategory && (
+        <DeleteModal
+          onClose={() => setActiveCategory(undefined)}
+          isOpen={!!activeCategory}
+          onConfirm={() => handleDelete(activeCategory.id)}
+          title="Delete Category"
+          text={`Are you sure you want to delete this category ${activeCategory.name}?`}
+        />
+      )}
 
       {showModal && (
         <CategoryModal

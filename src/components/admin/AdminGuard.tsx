@@ -1,27 +1,37 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { getToken } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuthStore();
   const router = useRouter();
   const [checked, setChecked] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
-    // wait for auth to settle
+    // wait for auth to settle before redirecting away from an admin page
     const timer = setTimeout(() => {
-      if (!user) {
-        router.replace('/admin/login');
+      const token = getToken();
+
+      if (!token) {
+        router.replace(`/admin/login?redirect=${pathname}`);
         return;
       }
+
+      if (!user) {
+        return;
+      }
+
       if (user.role === 'CUSTOMER') {
         router.replace('/products');
         return;
       }
+
       setChecked(true);
-    }, 300);
+    }, 10);
 
     return () => clearTimeout(timer);
   }, [user, router]);
