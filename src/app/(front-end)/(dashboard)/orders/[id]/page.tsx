@@ -3,23 +3,18 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import api from '@/lib/api';
 import { Order, OrderStatus } from '@/lib/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import OrderTimeline from '@/components/order/OrderTimeline';
-import {
-  ArrowLeft,
-  Package,
-  MapPin,
-  CreditCard,
-  CheckCircle,
-  Clock,
-  Truck,
-  XCircle,
-  Download,
-} from 'lucide-react';
+import { ArrowLeft, Package, MapPin } from 'lucide-react';
+import ProgressTracker from './ProgressTracker';
+import CancelledBanner from './CancelledBanner';
+import OrderItem from './OrderItem';
+import PaymentInfo from './PaymentInfo';
+import Actions from './Actions';
+import ReturnModal from './Modal/ReturnModal';
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   PENDING: 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -30,14 +25,6 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
   CANCELLED: 'bg-red-100 text-red-700 border-red-200',
   REFUNDED: 'bg-gray-100 text-gray-700 border-gray-200',
 };
-
-const PROGRESS_STEPS: { status: OrderStatus; label: string; icon: any }[] = [
-  { status: 'PENDING', label: 'Order Placed', icon: Clock },
-  { status: 'PAID', label: 'Payment Confirmed', icon: CreditCard },
-  { status: 'PROCESSING', label: 'Processing', icon: Package },
-  { status: 'SHIPPED', label: 'Shipped', icon: Truck },
-  { status: 'DELIVERED', label: 'Delivered', icon: CheckCircle },
-];
 
 const STATUS_ORDER: Record<OrderStatus, number> = {
   PENDING: 0,
@@ -189,64 +176,10 @@ export default function OrderDetailPage() {
       )}
 
       {/* ── PROGRESS TRACKER ──────────────────────────────── */}
-      {!isCancelled && (
-        <div className="mb-6 rounded-lg border bg-white p-5">
-          <div className="relative flex justify-between">
-            {/* progress line */}
-            <div className="absolute left-0 top-5 h-0.5 w-full bg-gray-200" />
-            <div
-              className="absolute left-0 top-5 h-0.5 bg-blue-600 transition-all"
-              style={{ width: `${(currentStep / (PROGRESS_STEPS.length - 1)) * 100}%` }}
-            />
-
-            {PROGRESS_STEPS.map((step, i) => {
-              const Icon = step.icon;
-              const isDone = currentStep >= i;
-              const isCurrent = currentStep === i;
-
-              return (
-                <div key={step.status} className="relative flex flex-col items-center">
-                  <div
-                    className={`z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 ${
-                      isDone
-                        ? 'border-blue-600 bg-blue-600 text-white'
-                        : 'border-gray-300 bg-white text-gray-300'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <span
-                    className={`mt-2 text-center text-xs ${
-                      isCurrent
-                        ? 'font-semibold text-blue-600'
-                        : isDone
-                          ? 'text-gray-600'
-                          : 'text-gray-300'
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {!isCancelled && <ProgressTracker currentStep={currentStep} />}
 
       {/* ── CANCELLED BANNER ──────────────────────────────── */}
-      {isCancelled && (
-        <div className="mb-6 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-          <XCircle className="h-6 w-6 shrink-0 text-red-500" />
-          <div>
-            <p className="font-medium text-red-700">Order {order.status.toLowerCase()}</p>
-            <p className="text-sm text-red-500">
-              {order.status === 'REFUNDED'
-                ? 'Your refund will appear within 5-7 business days.'
-                : 'This order has been cancelled.'}
-            </p>
-          </div>
-        </div>
-      )}
+      {isCancelled && <CancelledBanner order={order} />}
 
       {/* ── ORDER ITEMS ───────────────────────────────────── */}
       <div className="mb-4 rounded-lg border bg-white p-5">
@@ -257,36 +190,7 @@ export default function OrderDetailPage() {
 
         <div className="space-y-3">
           {order.items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between gap-4 border-b pb-3 last:border-0 last:pb-0"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-gray-900">{item.productName}</p>
-                {item.variant && (
-                  <p className="text-xs text-gray-800">
-                    Variant: {item.variant.name} - {item.variant.value}
-                  </p>
-                )}
-                {/* ← show flash sale savings */}
-                {item.salePrice && Number(item.salePrice) < Number(item.unitPrice) ? (
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-400 line-through">
-                      ${Number(item.unitPrice).toFixed(2)}
-                    </span>
-                    <span className="text-xs font-medium text-red-500">
-                      ${Number(item.salePrice).toFixed(2)} 🔥
-                    </span>
-                    <span className="text-xs text-gray-400">× {item.quantity}</span>
-                  </div>
-                ) : (
-                  <p className="text-xs text-gray-400">
-                    ${Number(item.unitPrice).toFixed(2)} × {item.quantity}
-                  </p>
-                )}
-              </div>
-              <p className="shrink-0 font-medium text-gray-900">${Number(item.total).toFixed(2)}</p>
-            </div>
+            <OrderItem key={item.id} item={item} />
           ))}
         </div>
 
@@ -327,30 +231,7 @@ export default function OrderDetailPage() {
       </div>
 
       {/* ── PAYMENT INFO ──────────────────────────────────── */}
-      {order.payment && (
-        <div className="mb-4 rounded-lg border bg-white p-5">
-          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-gray-900">
-            <CreditCard className="h-4 w-4" />
-            Payment
-          </h2>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Status</span>
-            <span
-              className={`font-medium ${
-                order.payment.status === 'SUCCEEDED' ? 'text-green-600' : 'text-gray-600'
-              }`}
-            >
-              {order.payment.status}
-            </span>
-          </div>
-          <div className="mt-1 flex items-center justify-between text-sm">
-            <span className="text-gray-500">Amount Charged</span>
-            <span className="font-medium text-gray-900">
-              ${Number(order.payment.amount).toFixed(2)} {order.payment.currency.toUpperCase()}
-            </span>
-          </div>
-        </div>
-      )}
+      {order.payment && <PaymentInfo payment={order.payment} />}
 
       {/* ── NOTES ─────────────────────────────────────────── */}
       {order.notes && (
@@ -361,42 +242,15 @@ export default function OrderDetailPage() {
       )}
 
       {/* ── ACTIONS ───────────────────────────────────────── */}
-      <div className="flex gap-3">
-        {canCancel && (
-          <button
-            onClick={handleCancel}
-            disabled={cancelling}
-            className="rounded-md border border-red-300 px-6 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-          >
-            {cancelling ? 'Cancelling...' : 'Cancel Order'}
-          </button>
-        )}
-
-        {order.status === 'DELIVERED' && (
-          <Link
-            href={`/products`}
-            className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Buy Again
-          </Link>
-        )}
-        {order.status === 'DELIVERED' && !order.returnRequest && (
-          <button
-            onClick={() => setShowReturnModal(true)}
-            className="rounded-md border border-orange-300 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50"
-          >
-            Request Return
-          </button>
-        )}
-        <button
-          onClick={handleDownloadInvoice}
-          disabled={downloading}
-          className="flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-        >
-          <Download className="h-4 w-4" />
-          {downloading ? 'Generating PDF...' : 'Download Invoice'}
-        </button>
-      </div>
+      <Actions
+        canCancel={canCancel}
+        cancelling={cancelling}
+        order={order}
+        downloading={downloading}
+        onReturnRequestClick={() => setShowReturnModal(true)}
+        handleDownloadInvoice={handleDownloadInvoice}
+        handleCancel={handleCancel}
+      />
       {order.returnRequest && (
         <div className="rounded-lg border bg-orange-50 p-4">
           <p className="text-sm font-medium text-orange-700">
@@ -418,102 +272,6 @@ export default function OrderDetailPage() {
           }}
         />
       )}
-    </div>
-  );
-}
-
-function ReturnModal({
-  orderId,
-  onClose,
-  onSubmitted,
-}: {
-  orderId: number;
-  onClose: () => void;
-  onSubmitted: () => void;
-}) {
-  const [reason, setReason] = useState('');
-  const [details, setDetails] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const REASONS = [
-    { value: 'DAMAGED', label: 'Item arrived damaged' },
-    { value: 'WRONG_ITEM', label: 'Received wrong item' },
-    { value: 'NOT_AS_DESCRIBED', label: 'Not as described' },
-    { value: 'CHANGED_MIND', label: 'Changed my mind' },
-    { value: 'OTHER', label: 'Other' },
-  ];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await api.post(`/returns/order/${orderId}`, { reason, details });
-      toast.success('Return request submitted');
-      onSubmitted();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to submit');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Request Return</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Reason</label>
-            <select
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select a reason...</option>
-              {REASONS.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Additional Details (optional)
-            </label>
-            <textarea
-              value={details}
-              onChange={(e) => setDetails(e.target.value)}
-              rows={3}
-              placeholder="Please describe the issue..."
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 rounded-md bg-orange-500 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
-            >
-              {loading ? 'Submitting...' : 'Submit Return Request'}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }

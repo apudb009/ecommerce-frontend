@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { FlashSale } from '@/lib/types';
+import Image from 'next/image';
 
 function calcFlashPrice(price: number, type: string, value: number): number {
   if (type === 'PERCENTAGE') {
@@ -130,10 +131,12 @@ export default function FlashSaleBanner({ sales }: { sales: FlashSale[] }) {
               className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-white/20"
             >
               {saleProduct.product.images?.[0] && (
-                <img
+                <Image
                   src={saleProduct.product.images[0].url}
                   alt={saleProduct.product.name}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain"
+                  width={80}
+                  height={80}
                 />
               )}
             </Link>

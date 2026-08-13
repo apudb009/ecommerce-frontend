@@ -1,5 +1,6 @@
 import { SettingStore } from '@/lib/types';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Under Maintenance',
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 async function getMaintenanceMode(): Promise<{
-  //maintenance_mode: boolean;
+  maintenance_mode: boolean;
   store_name: string;
   store_email: string;
 } | null> {
@@ -19,7 +20,7 @@ async function getMaintenanceMode(): Promise<{
     const storeName = data.store_name as string;
     const storeEmail = data.store_email as string;
     return {
-      //maintenance_mode: data.maintenance_mode as unknown as boolean,
+      maintenance_mode: data.maintenance_mode as unknown as boolean,
       store_name: storeName,
       store_email: storeEmail,
     };
@@ -30,6 +31,10 @@ async function getMaintenanceMode(): Promise<{
 
 export default async function MaintenancePage() {
   const maintenanceInfo = await getMaintenanceMode();
+
+  if (!maintenanceInfo?.maintenance_mode) {
+    redirect('/');
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 px-4 text-white">

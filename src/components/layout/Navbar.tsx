@@ -21,6 +21,7 @@ import api from '@/lib/api';
 import type { Category } from '@/lib/types';
 import NotificationBell from './NotificationBell';
 import { useSettingsStore } from '@/store/settingsStore';
+import Image from 'next/image';
 
 export default function Navbar() {
   const router = useRouter();
@@ -72,10 +73,12 @@ export default function Navbar() {
           {/* ── LOGO ──────────────────────────────────── */}
           <Link href="/" className="shrink-0 flex items-center gap-2">
             {settings.store_logo ? (
-              <img
+              <Image
                 src={settings.store_logo as string}
                 alt={settings.store_name as string}
                 className="h-8 w-auto"
+                width={32}
+                height={32}
               />
             ) : (
               <span className="text-xl font-bold text-blue-600">

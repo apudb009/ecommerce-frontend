@@ -8,6 +8,7 @@ import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
 export default function CartItem({ item }: { item: CartItemType }) {
   const { fetchCart } = useCartStore();
@@ -52,10 +53,12 @@ export default function CartItem({ item }: { item: CartItemType }) {
         className="h-20 w-20 shrink-0 overflow-hidden rounded-md bg-gray-100"
       >
         {item.product.images?.[0] ? (
-          <img
+          <Image
             src={item.product.images[0].url}
             alt={item.product.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
+            width={48}
+            height={36}
           />
         ) : null}
       </Link>

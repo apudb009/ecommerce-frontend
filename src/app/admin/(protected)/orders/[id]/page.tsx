@@ -136,11 +136,11 @@ export default function AdminOrderDetailPage() {
   return (
     <div className="max-w-3xl">
       <button
-        onClick={() => router.push('/admin/orders')}
+        onClick={() => router.back()}
         className="mb-4 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
       >
         <ArrowLeft className="h-4 w-4" />
-        All Orders
+        Orders
       </button>
 
       <div className="mb-6 flex items-center justify-between">

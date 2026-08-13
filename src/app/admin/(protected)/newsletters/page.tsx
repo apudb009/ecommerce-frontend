@@ -4,7 +4,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 import { Newsletter } from '@/lib/types';
-import { useAdminTable } from '@/hooks/useAdminTable';
+import { useTable } from '@/hooks/useTable';
 import AdminPagination from '@/components/admin/table/AdminPagination';
 import SortableHeader from '@/components/admin/table/SortableHeader';
 import { useAuthStore } from '@/store/authStore';
@@ -25,7 +25,7 @@ export default function AdminNewslettersPage() {
     setSort,
     setLimit,
     refresh,
-  } = useAdminTable<Newsletter>({
+  } = useTable<Newsletter>({
     endpoint: '/newsletters',
     defaultSort: 'createdAt',
   });

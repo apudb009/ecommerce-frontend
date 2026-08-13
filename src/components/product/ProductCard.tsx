@@ -10,8 +10,9 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
+import Image from 'next/image';
 
-export default function ProductCard({ product }: { product: Product }) {
+export default function ProductCard({ product, index }: { product: Product; index: number }) {
   const router = useRouter();
   const { user } = useAuthStore();
   const { settings } = useSettingsStore();
@@ -22,8 +23,6 @@ export default function ProductCard({ product }: { product: Product }) {
   const [flashPrice, setFlashPrice] = useState<number | null>(null);
 
   const productImage = product?.images?.find((image) => image.isMain);
-
-  console.log(settings.max_cart_items);
 
   useEffect(() => {
     if (!user) return;
@@ -124,10 +123,13 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="relative aspect-square bg-gray-100">
         {product.images?.[0] ? (
           <>
-            <img
-              src={productImage?.url}
+            <Image
+              src={productImage?.url ?? ''}
               alt={product.name}
               className="h-full w-full object-cover transition group-hover:scale-105"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              fill
+              priority={index < 4}
             />
             {flashPrice !== null && (
               <div className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">

@@ -1,23 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { format, set } from 'date-fns';
-import { useAdminTable } from '@/hooks/useAdminTable';
+import { format } from 'date-fns';
+import { useTable } from '@/hooks/useTable';
 import AdminSearch from '@/components/admin/table/AdminSearch';
 import AdminPagination from '@/components/admin/table/AdminPagination';
 import SortableHeader from '@/components/admin/table/SortableHeader';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Users, Plus, Edit2, Trash2, Eye } from 'lucide-react';
-import { Role, User } from '@/lib/types';
+import { User } from '@/lib/types';
 import { useRoleStore } from '@/store/roleStore';
 import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
 import DeleteModal from '@/components/ui/DeleteModal';
+import UserFormModal from './modal/form';
+import UserDetailModal from './modal/details';
 
 const ROLE_COLORS: Record<string, string> = {
   ADMIN: 'bg-purple-100 text-purple-700',
-  CUSTOMER: 'bg-gray-100 text-gray-600',
+  CUSTOMER: 'bg-green-100 text-green-600',
   MANAGER: 'bg-blue-100 text-blue-700',
   EDITOR: 'bg-green-100 text-green-700',
 };
@@ -37,7 +39,7 @@ export default function AdminUsersClient() {
     setSort,
     setLimit,
     refresh,
-  } = useAdminTable<User>({
+  } = useTable<User>({
     endpoint: '/user/admin/all',
     defaultSort: 'createdAt',
   });
@@ -108,19 +110,20 @@ export default function AdminUsersClient() {
 
         {/* role filter */}
         <div className="flex gap-1.5">
-          {['', 'ADMIN', 'CUSTOMER'].map((role) => (
-            <button
-              key={role}
-              onClick={() => setFilter('role', role || null)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                roleFilter === role
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {role || 'All Roles'}
-            </button>
-          ))}
+          {roles &&
+            [{ name: '' }, { name: 'CUSTOMER' }, ...roles].map((role, index) => (
+              <button
+                key={index}
+                onClick={() => setFilter('role', role.name || null)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                  roleFilter === role.name
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {role.name || 'All Roles'}
+              </button>
+            ))}
         </div>
       </div>
 
@@ -257,7 +260,7 @@ export default function AdminUsersClient() {
 
       {/* modals */}
       {showModal && (
-        <UserModal
+        <UserFormModal
           roles={roles}
           user={editingUser}
           onClose={() => {
@@ -292,257 +295,6 @@ export default function AdminUsersClient() {
           }}
         />
       )}
-    </div>
-  );
-}
-
-// ── USER FORM MODAL ─────────────────────────────────
-function UserModal({
-  user,
-  onClose,
-  onSaved,
-  roles,
-}: {
-  user: User | null;
-  roles: Role[] | null;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const isEdit = !!user;
-  const [form, setForm] = useState({
-    name: user?.name || '',
-    username: user?.username || '',
-    email: user?.email || '',
-    role: user?.role || 'CUSTOMER',
-    password: '',
-    roleId: user?.userRole?.id ?? null,
-  });
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      if (isEdit) {
-        const payload: Partial<User> = { ...form };
-        if (!payload.password) delete payload.password;
-        await api.patch(`/user/admin/${user.id}`, payload);
-        toast.success('User updated');
-      } else {
-        if (!form.password) {
-          toast.error('Password is required');
-          return;
-        }
-        await api.post('/user/admin', form);
-        toast.success('User created');
-      }
-      onSaved();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to save user');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <Users className="h-5 w-5 text-blue-600" />
-          {isEdit ? 'Edit User' : 'Create User'}
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Full Name</label>
-              <input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="John Doe"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Username</label>
-              <input
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
-                placeholder="johndoe"
-                required
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Email</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="john@example.com"
-              required
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">
-              {isEdit ? 'New Password (leave blank to keep)' : 'Password'}
-            </label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="••••••••"
-              required={!isEdit}
-              minLength={8}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Role</label>
-            <select
-              value={form.roleId || ''}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  roleId: Number(e.target.value),
-                  role: roles?.find((r) => r.id === Number(e.target.value))?.name || 'CUSTOMER',
-                })
-              }
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {roles &&
-                roles.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Saving...' : isEdit ? 'Update User' : 'Create User'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// ── USER DETAIL MODAL ───────────────────────────────
-function UserDetailModal({
-  user,
-  onClose,
-  onEdit,
-}: {
-  user: User;
-  onClose: () => void;
-  onEdit: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* avatar */}
-        <div className="mb-4 flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-2xl font-bold text-white">
-            {(user.name || user.username || 'U').charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">{user.name || user.username}</h2>
-            <p className="text-sm text-gray-400">{user.email}</p>
-            <span
-              className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                user.role === 'ADMIN'
-                  ? 'bg-purple-100 text-purple-700'
-                  : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              {user.role}
-            </span>
-          </div>
-        </div>
-
-        {/* stats */}
-        <div className="mb-4 grid grid-cols-3 gap-3">
-          {[
-            { label: 'Orders', value: user._count?.orders ?? 0 },
-            { label: 'Reviews', value: user._count?.reviews ?? 0 },
-            { label: 'Wishlist', value: user._count?.wishlist ?? 0 },
-          ].map((stat) => (
-            <div key={stat.label} className="rounded-lg bg-gray-50 p-3 text-center">
-              <p className="text-xl font-bold text-gray-900">{stat.value}</p>
-              <p className="text-xs text-gray-400">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* permissions preview */}
-        {user.userRole?.permissions?.length > 0 && (
-          <div className="mb-4">
-            <p className="mb-2 text-xs font-semibold text-gray-500">
-              PERMISSIONS ({user.userRole.permissions.length})
-            </p>
-            <div className="max-h-32 overflow-y-auto rounded-lg bg-gray-50 p-2">
-              <div className="flex flex-wrap gap-1">
-                {user.userRole.permissions.map((rp) => (
-                  <span
-                    key={`${rp.permission.module}:${rp.permission.action}`}
-                    className="rounded bg-white px-1.5 py-0.5 text-xs text-gray-600 shadow-sm"
-                  >
-                    {rp.permission.module}:{rp.permission.action}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <button
-            onClick={onEdit}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            <Edit2 className="h-4 w-4" />
-            Edit User
-          </button>
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            Close
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

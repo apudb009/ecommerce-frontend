@@ -185,6 +185,8 @@ export interface Banner {
   subtitle: string | null;
   image: string;
   link: string | null;
+  isActive: boolean;
+  position: number;
 }
 
 export type InvoiceStatus = 'UNPAID' | 'PAID' | 'CANCELLED';
@@ -322,7 +324,10 @@ export interface Tax {
   rate: number;
   type: 'PERCENTAGE' | 'FIXED';
   isActive: boolean;
+  createdAt: string;
 }
+
+export type TaxType = Tax['type'];
 
 export interface Shipping {
   id: number;
@@ -490,4 +495,30 @@ export interface Shipping {
   price: number;
   isActive: boolean;
   createdAt: string;
+}
+
+export interface StoreSettings {
+  store_name: string;
+  store_email: string;
+  store_phone: string;
+  store_address: string;
+  store_logo: string;
+  store_favicon: string;
+  currency: string;
+  currency_symbol: string;
+  maintenance_mode: boolean;
+  allow_reviews: boolean;
+  allow_guest_checkout: boolean;
+  free_shipping_threshold: number;
+  max_cart_items: number;
+  low_stock_threshold: number;
+  order_cancel_hours: number;
+  auto_deliver_days: number;
+  loyalty_points_per_dollar: number;
+  loyalty_redeem_rate: number;
+  social_facebook: string;
+  social_instagram: string;
+  social_twitter: string;
+  meta_title: string;
+  meta_description: string;
 }

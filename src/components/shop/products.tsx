@@ -1,15 +1,14 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import api from '@/lib/api';
-import { PaginatedResponse, Product, SearchParam } from '@/lib/types';
+import { PaginatedResponse, Product } from '@/lib/types';
 import ProductCard from '@/components/product/ProductCard';
 import FilterSidebar from '@/components/product/FilterSidebar';
 import SearchBar from '@/components/product/SearchBar';
 import ActiveFilterTags from '@/components/product/ActiveFilterTags';
-import { SlidersHorizontal, ChevronLeft, ChevronRight, LayoutGrid, List, X } from 'lucide-react';
+import { SlidersHorizontal, ChevronLeft, ChevronRight, LayoutGrid, List } from 'lucide-react';
 import Link from 'next/link';
 
 const SORT_OPTIONS = [
@@ -21,13 +20,16 @@ const SORT_OPTIONS = [
   { value: 'name:desc', label: 'Name: Z→A' },
 ];
 
-export default function ProductsClient() {
+export default function ProductsClient({
+  products,
+  meta,
+}: {
+  products: Product[];
+  meta: PaginatedResponse<Product>['meta'] | null;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [meta, setMeta] = useState<PaginatedResponse<Product>['meta'] | null>(null);
-  const [loading, setLoading] = useState(true);
   const [showSidebar, setShowSidebar] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -35,50 +37,6 @@ export default function ProductsClient() {
   const sortParam = searchParams.get('sortBy')
     ? `${searchParams.get('sortBy')}:${searchParams.get('sortOrder') || 'desc'}`
     : 'createdAt:desc';
-
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params: SearchParam = {
-        page: Number((searchParams.get('page') as string) ?? '1') ?? 1,
-        limit: 12,
-        search: searchParams.get('search') || undefined,
-        categoryId: searchParams.get('categoryId') || undefined,
-        minPrice: searchParams.get('minPrice') || undefined,
-        maxPrice: searchParams.get('maxPrice') || undefined,
-        inStock: searchParams.get('inStock') || undefined,
-        minRating: searchParams.get('minRating') || undefined,
-        variantValues: searchParams.get('variantValues') || undefined,
-        variantName: searchParams.get('variantName') || undefined,
-        colors: searchParams.get('colors') || undefined,
-        sortBy: searchParams.get('sortBy') || 'createdAt',
-        sortOrder: searchParams.get('sortOrder') || 'desc',
-      };
-
-      // remove undefined
-      Object.keys(params).forEach((key) => {
-        const typedKey = key as keyof typeof params;
-        if (params[typedKey] === undefined) {
-          delete params[typedKey];
-        }
-      });
-
-      const { data } = await api.get('/products', { params });
-      setProducts(data.data || []);
-      setMeta(data.meta);
-    } catch {
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      await fetchProducts();
-    };
-    void loadProducts();
-  }, [fetchProducts]);
 
   const setSort = (value: string) => {
     const [sortBy, sortOrder] = value.split(':');
@@ -179,22 +137,7 @@ export default function ProductsClient() {
           </div>
 
           {/* products */}
-          {loading ? (
-            <div
-              className={`grid gap-4 ${
-                viewMode === 'grid' ? 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'
-              }`}
-            >
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`animate-pulse rounded-xl bg-gray-100 ${
-                    viewMode === 'grid' ? 'h-72' : 'h-28'
-                  }`}
-                />
-              ))}
-            </div>
-          ) : products.length === 0 ? (
+          {products.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 py-16 text-center">
               <p className="text-lg font-medium text-gray-700">No products found</p>
               <p className="mt-1 text-sm text-gray-400">Try adjusting your search or filters</p>
@@ -207,8 +150,8 @@ export default function ProductsClient() {
             </div>
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {products.map((product, index) => (
+                <ProductCard key={product.id} product={product} index={index} />
               ))}
             </div>
           ) : (

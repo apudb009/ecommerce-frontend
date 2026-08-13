@@ -6,6 +6,8 @@ import { Invoice } from '@/lib/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { FileText, Download } from 'lucide-react';
+import { useTable } from '@/hooks/useTable';
+import CommonPagination from '@/components/common/table/Pagination';
 
 const STATUS_COLORS = {
   PAID: 'bg-green-100 text-green-700',
@@ -14,24 +16,23 @@ const STATUS_COLORS = {
 };
 
 export default function InvoicesPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: invoices,
+    meta,
+    loading,
+    limit,
+    //search,
+    //sort,
+    //order,
+    setPage,
+    //setSearch,
+    setLimit,
+  } = useTable<Invoice>({
+    endpoint: '/invoices',
+    defaultSort: 'issuedAt',
+  });
+
   const [downloading, setDownloading] = useState<number | null>(null);
-
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        const { data } = await api.get('/invoices');
-        setInvoices(data);
-      } catch {
-        toast.error('Failed to load invoices');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchInvoices();
-  }, []);
 
   const handleDownload = async (invoice: Invoice) => {
     setDownloading(invoice.id);
@@ -123,6 +124,19 @@ export default function InvoicesPage() {
               ))}
             </tbody>
           </table>
+          {/* ── PAGINATION ───────────────────────────── */}
+          {meta && (
+            <CommonPagination
+              page={meta.page}
+              lastPage={meta.lastPage}
+              total={meta.total}
+              limit={limit}
+              hasNextPage={meta.hasNextPage}
+              hasPrevPage={meta.hasPrevPage}
+              onPageChange={setPage}
+              onLimitChange={setLimit}
+            />
+          )}
         </div>
       )}
     </div>

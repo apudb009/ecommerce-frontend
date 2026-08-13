@@ -4,19 +4,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 
-interface UseAdminTableOptions {
+interface UseTableOptions {
   endpoint: string;
   defaultLimit?: number;
   defaultSort?: string;
   defaultOrder?: 'asc' | 'desc';
 }
 
-export function useAdminTable<T>({
+export function useTable<T>({
   endpoint,
   defaultLimit = 10,
   defaultSort = 'createdAt',
   defaultOrder = 'desc',
-}: UseAdminTableOptions) {
+}: UseTableOptions) {
   const router = useRouter();
   const searchParams = useSearchParams();
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Banner } from '@/lib/types';
+import Image from 'next/image';
 
 export default function BannerSlider({ banners }: { banners: Banner[] }) {
   const [current, setCurrent] = useState(0);
@@ -39,11 +40,18 @@ export default function BannerSlider({ banners }: { banners: Banner[] }) {
         className="flex transition-transform duration-500 ease-in-out"
         style={{ transform: `translateX(-${current * 100}%)` }}
       >
-        {banners.map((banner) => (
+        {banners.map((banner, index) => (
           <div key={banner.id} className="relative min-w-full">
             {/* image */}
-            <div className="aspect-21/9 w-full overflow-hidden bg-gray-100">
-              <img src={banner.image} alt={banner.title} className="h-full w-full object-cover" />
+            <div className="aspect-21/9 w-full overflow-hidden bg-gray-100 relative">
+              <Image
+                src={banner.image}
+                alt={banner.title}
+                className="h-full w-full object-cover"
+                fill
+                sizes="100vw"
+                priority={index === 0}
+              />
             </div>
 
             {/* overlay text */}

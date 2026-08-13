@@ -10,8 +10,9 @@ import { Address } from '@/lib/types';
 import AddressSelector from '@/components/checkout/AddressSelector';
 import PaymentForm from '@/components/checkout/PaymentForm';
 import { toast } from 'sonner';
-import { ShoppingBag, CheckCircle, Tag, X } from 'lucide-react';
-import Image from 'next/image';
+import OrderSuccess from './OrderSuccess';
+import OrderSummary from './OrderSummary';
+import Coupon from './Coupon';
 
 type Step = 'address' | 'payment' | 'success';
 
@@ -182,33 +183,7 @@ export default function CheckoutPage() {
 
   // ── SUCCESS ─────────────────────────────────────────
   if (step === 'success') {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <CheckCircle className="mb-4 h-16 w-16 text-green-500" />
-        <h1 className="text-2xl font-bold text-gray-900">Order Placed!</h1>
-        <p className="mt-2 text-gray-500">Your order #{orderId} has been confirmed.</p>
-        {couponResult && (
-          <p className="mt-1 text-sm text-green-600">
-            You saved <strong>${discount.toFixed(2)}</strong> with coupon{' '}
-            <strong>{couponResult.coupon.code}</strong>!
-          </p>
-        )}
-        <div className="mt-6 flex gap-3">
-          <button
-            onClick={() => router.push(`/orders/${orderId}`)}
-            className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            View Order
-          </button>
-          <button
-            onClick={() => router.push('/products')}
-            className="rounded-md border border-gray-300 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Continue Shopping
-          </button>
-        </div>
-      </div>
-    );
+    return <OrderSuccess couponResult={couponResult} orderId={orderId} discount={discount} />;
   }
 
   if (!cart || cart.items.length === 0) return null;
@@ -243,54 +218,15 @@ export default function CheckoutPage() {
                 }}
               />
 
-              {/* ── COUPON ────────────────────────────────── */}
-              <div className="rounded-lg border bg-white p-5">
-                <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-gray-900">
-                  <Tag className="h-4 w-4 text-blue-600" />
-                  Coupon Code
-                </h2>
-
-                {couponResult ? (
-                  // ── APPLIED STATE ────────────────────────
-                  <div className="flex items-center justify-between rounded-md border border-green-200 bg-green-50 px-4 py-3">
-                    <div>
-                      <p className="text-sm font-semibold text-green-700">
-                        ✅ {couponResult.coupon.code} applied!
-                      </p>
-                      <p className="text-xs text-green-600">
-                        {couponResult.coupon.type === 'PERCENTAGE'
-                          ? `${couponResult.coupon.value}% off`
-                          : `$${Number(couponResult.coupon.value).toFixed(2)} off`}{' '}
-                        — saving <strong>${discount.toFixed(2)}</strong>
-                      </p>
-                    </div>
-                    <button
-                      onClick={handleRemoveCoupon}
-                      className="rounded-full p-1 text-green-600 hover:bg-green-100"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : (
-                  // ── INPUT STATE ──────────────────────────
-                  <div className="flex gap-2">
-                    <input
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
-                      placeholder="Enter coupon code"
-                      className="flex-1 rounded-md border border-gray-300 px-3 py-2 font-mono text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      onClick={handleApplyCoupon}
-                      disabled={couponLoading || !couponCode.trim()}
-                      className="rounded-md bg-gray-800 px-4 py-2 text-sm font-medium text-white hover:bg-gray-900 disabled:opacity-50"
-                    >
-                      {couponLoading ? '...' : 'Apply'}
-                    </button>
-                  </div>
-                )}
-              </div>
+              <Coupon
+                couponResult={couponResult}
+                discount={discount}
+                couponCode={couponCode}
+                couponLoading={couponLoading}
+                handleRemoveCoupon={handleRemoveCoupon}
+                handleApplyCoupon={handleApplyCoupon}
+                onChangeCouponCode={(e) => setCouponCode(e.target.value.toUpperCase())}
+              />
 
               <button
                 onClick={handlePlaceOrder}
@@ -313,97 +249,15 @@ export default function CheckoutPage() {
         </div>
 
         {/* ── RIGHT — ORDER SUMMARY ───────────────────────── */}
-        <div>
-          <div className="sticky top-20 rounded-lg border bg-white p-5">
-            <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
-              <ShoppingBag className="h-5 w-5" />
-              Order Summary
-            </h2>
-
-            {/* items */}
-            <div className="max-h-48 space-y-3 overflow-y-auto">
-              {cart.items.map((item) => (
-                <div key={item.id} className="flex gap-3">
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-gray-100">
-                    {item.product.images?.[0] && (
-                      <Image
-                        src={item.product.images[0].url}
-                        alt=""
-                        className="h-full w-full object-contain"
-                        width={48}
-                        height={48}
-                      />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="line-clamp-1 text-xs font-medium text-gray-900">
-                      {item.product.name}
-                    </p>
-                    {item.variant && (
-                      <p className="line-clamp-1 text-xs font-medium text-gray-900">
-                        Variant: {item.variant.name} - {item.variant.value}
-                      </p>
-                    )}
-                    <p className="text-xs text-gray-400">
-                      ${Number(item.product.price).toFixed(2)} × {item.quantity}
-                    </p>
-                  </div>
-                  <p className="shrink-0 text-sm font-medium text-gray-900">
-                    ${item.subtotal.toFixed(2)}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {/* totals */}
-            <div className="mt-4 space-y-2 border-t pt-4 text-sm">
-              <div className="flex justify-between text-gray-500">
-                <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-
-              {/* ── DISCOUNT ROW ────────────────────────── */}
-              {discount > 0 && (
-                <div className="flex justify-between font-medium text-green-600">
-                  <span className="flex items-center gap-1">
-                    <Tag className="h-3.5 w-3.5" />
-                    Discount ({couponResult?.coupon.code})
-                  </span>
-                  <span>-${discount.toFixed(2)}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between text-gray-500">
-                <span>Shipping</span>
-                <span>
-                  {shipping === 0 ? (
-                    <span className="text-green-600">Free</span>
-                  ) : (
-                    `$${shipping.toFixed(2)}`
-                  )}
-                </span>
-              </div>
-
-              <div className="flex justify-between text-gray-500">
-                <span>Tax (8%)</span>
-                <span>${tax.toFixed(2)}</span>
-              </div>
-
-              {/* ── TOTAL ───────────────────────────────── */}
-              <div className="flex justify-between border-t pt-3 text-base font-bold text-gray-900">
-                <span>Total</span>
-                <span>${total.toFixed(2)}</span>
-              </div>
-
-              {/* savings badge */}
-              {discount > 0 && (
-                <div className="rounded-md bg-green-50 px-3 py-2 text-center text-xs font-medium text-green-700">
-                  🎉 You&apos;re saving ${discount.toFixed(2)} on this order!
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <OrderSummary
+          cart={cart}
+          subtotal={subtotal}
+          discount={discount}
+          couponResult={couponResult}
+          shipping={shipping}
+          tax={tax}
+          total={total}
+        />
       </div>
     </div>
   );

@@ -1,15 +1,12 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import api from '@/lib/api';
 import { Banner, FlashSale, Product } from '@/lib/types';
 import BannerSlider from '@/components/home/BannerSlider';
 import ProductSlider from '@/components/home/ProductSlider';
 import { Tag, Zap, TrendingUp } from 'lucide-react';
-import { toast } from 'sonner';
 import FlashSaleBanner from '@/components/home/FlashSaleBanner';
+import Image from 'next/image';
+import { serverFetch } from '@/lib/server-api';
+import { NewsletterForm } from '@/components/home/NewsletterForm';
 
 interface Category {
   id: number;
@@ -19,85 +16,19 @@ interface Category {
   _count: { products: number };
 }
 
-type NewsletterInput = {
-  email: string;
-};
+async function getHomeData() {
+  const [banners, hotProducts, bestSellers, categories, flashSales] = await Promise.all([
+    serverFetch<Banner[]>('/banners', { tags: ['banners'] }).catch(() => []),
+    serverFetch<Product[]>('/products/hot', { tags: ['products'] }).catch(() => []),
+    serverFetch<Product[]>('/products/best-sellers', { tags: ['products'] }).catch(() => []),
+    serverFetch<Category[]>('/categories', { tags: ['categories'] }).catch(() => []),
+    serverFetch<FlashSale[]>('/flash-sales/active', { revalidate: 30 }).catch(() => []), // shorter TTL — time-sensitive
+  ]);
+  return { banners, hotProducts, bestSellers, categories, flashSales };
+}
 
-export default function HomePage() {
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [hotProducts, setHotProducts] = useState<Product[]>([]);
-  const [bestSellers, setBestSellers] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const [flashSales, setFlashSales] = useState<FlashSale[]>([]);
-
-  const { register, handleSubmit, reset } = useForm<NewsletterInput>();
-
-  const onSubmit = (data: NewsletterInput) => {
-    api
-      .post('/newsletters', { email: data.email })
-      .then(() => {
-        toast.success('Subscribed!');
-        reset();
-      })
-      .catch((error) => {
-        const message = error.response?.data?.message ?? 'Failed to subscribe';
-        toast.error(message);
-      });
-  };
-
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const [bannersRes, hotRes, bestRes, catsRes, flashRes] = await Promise.all([
-          api.get<Banner[]>('/banners'),
-          api.get<Product[]>('/products/hot'),
-          api.get<Product[]>('/products/best-sellers'),
-          api.get<Category[]>('/categories'),
-          api.get('/flash-sales/active'),
-        ]);
-
-        setBanners(bannersRes.data);
-        setHotProducts(hotRes.data);
-        setBestSellers(bestRes.data);
-        setCategories(catsRes.data);
-        setFlashSales(flashRes.data);
-      } catch {
-        // silent fail — page still renders without data
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchAll();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-7xl space-y-8 px-4 py-8">
-        {/* banner skeleton */}
-        <div className="aspect-21/9 animate-pulse rounded-xl bg-gray-100" />
-        {/* categories skeleton */}
-        <div className="grid grid-cols-4 gap-3 md:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="aspect-square animate-pulse rounded-lg bg-gray-100" />
-          ))}
-        </div>
-        {/* sliders skeleton */}
-        {[1, 2].map((i) => (
-          <div key={i} className="space-y-3">
-            <div className="h-6 w-40 animate-pulse rounded bg-gray-100" />
-            <div className="flex gap-4">
-              {Array.from({ length: 5 }).map((_, j) => (
-                <div key={j} className="h-60 w-48 shrink-0 animate-pulse rounded-lg bg-gray-100" />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+export default async function HomePage() {
+  const { banners, hotProducts, bestSellers, categories, flashSales } = await getHomeData();
 
   return (
     <div className="mx-auto max-w-7xl space-y-10 px-4 py-8">
@@ -137,7 +68,12 @@ export default function HomePage() {
               >
                 <div className="mb-2 flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-blue-50">
                   {cat.image ? (
-                    <img src={cat.image} alt={cat.name} className="h-full w-full object-cover" />
+                    <Image
+                      src={cat.image}
+                      alt={cat.name}
+                      className="h-full w-full object-cover"
+                      fill
+                    />
                   ) : (
                     <Tag className="h-6 w-6 text-blue-400" />
                   )}
@@ -203,24 +139,7 @@ export default function HomePage() {
       )}
 
       {/* ── NEWSLETTER SECTION ────────────────────────── */}
-      <div className="rounded-xl bg-gray-900 px-6 py-10 text-center text-white">
-        <h2 className="text-2xl font-bold">Stay Updated</h2>
-        <p className="mt-1 text-gray-400">Subscribe for exclusive deals and new arrivals</p>
-
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="mx-auto mt-4 md:flex max-w-md gap-2">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 rounded-md border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              {...register('email', { required: true })}
-            />
-            <button className="rounded-md bg-blue-600 px-5 py-2 text-sm font-semibold hover:bg-blue-700 max-md:mt-4 max-md:w-full">
-              Subscribe
-            </button>
-          </div>
-        </form>
-      </div>
+      <NewsletterForm />
     </div>
   );
 }

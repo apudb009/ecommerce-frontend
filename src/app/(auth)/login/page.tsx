@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import api, { getCookie, setCookie, setTokens } from '@/lib/api';
+import api, { setTokens } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';

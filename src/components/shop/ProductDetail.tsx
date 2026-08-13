@@ -1,7 +1,6 @@
 'use client';
 
 import { FC, useEffect, useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import {
@@ -17,30 +16,25 @@ import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
 import StarRating from '@/components/ui/StarRating';
 import ReviewSection from '@/components/product/ReviewSection';
-import {
-  ShoppingCart,
-  Minus,
-  Plus,
-  ChevronLeft,
-  Package,
-  Truck,
-  ShieldCheck,
-  Zap,
-} from 'lucide-react';
+import { ShoppingCart, Minus, Plus, ChevronLeft, Zap } from 'lucide-react';
 import CountdownTimer from '../ui/CountdownTimer';
+import ImageGallery from './Product/ImageGallery';
+import TrustBadges from './Product/TrustBadges';
+import Loader from './Product/Loader';
 
 type Props = {
   slug: string;
+  product: Product;
 };
 
-const ProductDetail: FC<Props> = ({ slug }) => {
+const ProductDetail: FC<Props> = ({ product, slug }) => {
   const router = useRouter();
 
   const { user } = useAuthStore();
   const { fetchCart } = useCartStore();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  //const [product, setProduct] = useState<Product | null>(null);
+  //const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [addingToCart, setAddingToCart] = useState(false);
@@ -67,30 +61,30 @@ const ProductDetail: FC<Props> = ({ slug }) => {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      setLoading(true);
+      //setLoading(true);
       try {
-        const { data } = await api.get(`/products/${slug}`);
+        //const { data } = await api.get(`/products/${slug}`);
 
         // fetch variants by product id
-        if (data.id) {
-          const { data: variantData } = await api.get(`/products/${data.id}/variants`);
+        if (product.id) {
+          const { data: variantData } = await api.get(`/products/${product.id}/variants`);
           setVariants(variantData);
         }
 
-        setProduct(data);
+        //setProduct(data);
         setSelectedImage(0);
         setQuantity(1);
-        setImages(data.images);
+        setImages(product.images);
       } catch {
         toast.error('Product not found');
         router.push('/products');
       } finally {
-        setLoading(false);
+        //setLoading(false);
       }
     };
 
     fetchProduct();
-  }, [slug]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [product]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!product) return;
@@ -120,12 +114,17 @@ const ProductDetail: FC<Props> = ({ slug }) => {
     return acc;
   }, {});
 
-  const handleAddToCart = async () => {
-    if (!product) return;
+  const handleAddToCart = async (): Promise<boolean> => {
+    if (!product) return false;
 
     if (!user) {
       router.push(`/login?redirect=/products/${slug}`);
-      return;
+      return false;
+    }
+
+    if (!!product.variants?.length && !selectedVariant) {
+      toast.error('Please select a variant');
+      return false;
     }
 
     setAddingToCart(true);
@@ -137,9 +136,11 @@ const ProductDetail: FC<Props> = ({ slug }) => {
       });
       await fetchCart();
       toast.success(`${quantity} × ${product.name} added to cart`);
+      return true;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to add to cart');
+      return false;
     } finally {
       setAddingToCart(false);
     }
@@ -161,29 +162,11 @@ const ProductDetail: FC<Props> = ({ slug }) => {
   };
 
   const handleBuyNow = async () => {
-    await handleAddToCart();
-    if (user) router.push('/checkout');
+    const isAddedToCart = await handleAddToCart();
+    if (user && isAddedToCart) router.push('/checkout');
   };
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <div className="aspect-square animate-pulse rounded-lg bg-gray-100" />
-          <div className="space-y-4">
-            <div className="h-8 w-3/4 animate-pulse rounded bg-gray-100" />
-            <div className="h-4 w-1/2 animate-pulse rounded bg-gray-100" />
-            <div className="h-24 animate-pulse rounded bg-gray-100" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!product) return null;
-
   const isOutOfStock = product.stock === 0;
-  //const images = product.images?.length ? product.images : [];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -197,39 +180,12 @@ const ProductDetail: FC<Props> = ({ slug }) => {
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         {/* ── IMAGE GALLERY ─────────────────────────────── */}
-        <div>
-          <div className="aspect-square overflow-hidden rounded-lg border bg-gray-50">
-            {images.length > 0 ? (
-              <Image
-                src={images[selectedImage].url}
-                alt={product.name}
-                className="h-full w-full"
-                width={500}
-                height={500}
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-gray-300">
-                <ShoppingCart className="h-20 w-20" />
-              </div>
-            )}
-          </div>
-
-          {images.length > 1 && (
-            <div className="mt-3 flex gap-2">
-              {images.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImage(i)}
-                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 ${
-                    selectedImage === i ? 'border-blue-600' : 'border-transparent'
-                  }`}
-                >
-                  <Image src={img.url} alt="" className="h-full w-full" width={60} height={60} />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <ImageGallery
+          images={images}
+          selectedImage={selectedImage}
+          product={product}
+          onSelection={(index) => setSelectedImage(index)}
+        />
 
         {/* ── DETAILS ────────────────────────────────────── */}
         <div>
@@ -443,20 +399,7 @@ const ProductDetail: FC<Props> = ({ slug }) => {
           </div>
 
           {/* trust badges */}
-          <div className="mt-6 grid grid-cols-3 gap-3 border-t pt-6">
-            <div className="flex flex-col items-center text-center">
-              <Truck className="mb-1 h-5 w-5 text-gray-400" />
-              <span className="text-xs text-gray-500">Fast Delivery</span>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <ShieldCheck className="mb-1 h-5 w-5 text-gray-400" />
-              <span className="text-xs text-gray-500">Secure Payment</span>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <Package className="mb-1 h-5 w-5 text-gray-400" />
-              <span className="text-xs text-gray-500">Easy Returns</span>
-            </div>
-          </div>
+          <TrustBadges />
         </div>
       </div>
 

@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import { Product } from '@/lib/types';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import { useAdminTable } from '@/hooks/useAdminTable';
+import { useTable } from '@/hooks/useTable';
 import AdminSearch from '@/components/admin/table/AdminSearch';
 import SortableHeader from '@/components/admin/table/SortableHeader';
 import AdminPagination from '@/components/admin/table/AdminPagination';
@@ -15,6 +15,7 @@ import { hasPermission } from '@/helpers/checkPermission';
 import RestrictedAccess from '@/components/admin/RestrictedAccess';
 import { useState } from 'react';
 import DeleteModal from '@/components/ui/DeleteModal';
+import Image from 'next/image';
 
 const STATUS_OPTIONS = [
   {
@@ -46,7 +47,7 @@ export default function AdminProductsPage() {
     setSort,
     setLimit,
     refresh,
-  } = useAdminTable<Product>({
+  } = useTable<Product>({
     endpoint: '/products/admin/all',
     defaultSort: 'createdAt',
   });
@@ -159,7 +160,7 @@ export default function AdminProductsPage() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             {productImage ? (
-                              <img
+                              <Image
                                 src={productImage.url}
                                 alt=""
                                 className="h-10 w-10 rounded-md object-cover"

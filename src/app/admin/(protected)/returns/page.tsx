@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { RotateCcw } from 'lucide-react';
 import { ReturnRequest } from '@/lib/types';
-import { useAdminTable } from '@/hooks/useAdminTable';
+import { useTable } from '@/hooks/useTable';
 import SortableHeader from '@/components/admin/table/SortableHeader';
 import AdminPagination from '@/components/admin/table/AdminPagination';
 import AdminSearch from '@/components/admin/table/AdminSearch';
@@ -37,7 +37,7 @@ export default function AdminReturnsPage() {
     setSort,
     setLimit,
     refresh,
-  } = useAdminTable<ReturnRequest>({
+  } = useTable<ReturnRequest>({
     endpoint: '/returns/admin/all',
     defaultSort: 'createdAt',
   });

@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Product } from '@/lib/types';
 import { ChevronLeft, ChevronRight, Star, ShoppingCart } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -64,8 +65,8 @@ export default function ProductSlider({
         className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide"
         style={{ scrollbarWidth: 'none' }}
       >
-        {products.map((product) => (
-          <SliderCard key={product.id} product={product} />
+        {products.map((product, index) => (
+          <SliderCard key={product.id} product={product} index={index} />
         ))}
       </div>
     </div>
@@ -73,7 +74,7 @@ export default function ProductSlider({
 }
 
 // ── SLIDER CARD ─────────────────────────────────────
-function SliderCard({ product }: { product: Product }) {
+function SliderCard({ product, index }: { product: Product; index: number }) {
   const router = useRouter();
   const { user } = useAuthStore();
   const { fetchCart } = useCartStore();
@@ -95,6 +96,7 @@ function SliderCard({ product }: { product: Product }) {
       await api.post('/cart/items', { productId: product.id, quantity: 1 });
       await fetchCart();
       toast.success(`${product.name} added to cart`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to add to cart');
     } finally {
@@ -110,10 +112,13 @@ function SliderCard({ product }: { product: Product }) {
       {/* image */}
       <div className="relative aspect-square bg-gray-100">
         {productImage?.url ? (
-          <img
+          <Image
             src={productImage.url}
             alt={product.name}
             className="h-full w-full object-cover transition group-hover:scale-105"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            priority={index < 4}
           />
         ) : (
           <div className="flex h-full items-center justify-center">
@@ -134,10 +139,10 @@ function SliderCard({ product }: { product: Product }) {
         <p className="line-clamp-2 text-xs font-medium text-gray-900">{product.name}</p>
 
         {/* rating */}
-        {(product as any).avgRating && (
+        {product.averageRating && (
           <div className="mt-1 flex items-center gap-1">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs text-gray-400">{(product as any).avgRating}</span>
+            <span className="text-xs text-gray-400">{product.averageRating}</span>
           </div>
         )}
 

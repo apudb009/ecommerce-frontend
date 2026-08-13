@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { buildMeta } from '@/lib/seo';
 import ProductDetail from '@/components/shop/ProductDetail';
+import { serverFetch } from '@/lib/server-api';
+import { Product } from '@/lib/types';
 
 type PageProps = {
   params: Promise<{
@@ -43,7 +45,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
+async function fetchProduct(slug: string) {
+  const product = await serverFetch<Product>(`/products/${slug}`);
+  return product;
+}
+
 export default async function ProductDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  return <ProductDetail slug={slug} />;
+  const product = await fetchProduct(slug);
+  return <ProductDetail product={product} slug={slug} />;
 }

@@ -11,7 +11,7 @@ import api, { getToken } from '@/lib/api';
 const PROTECTED_ROUTES = ['/cart', '/checkout', '/orders', '/profile'];
 
 // ── redirect away if already logged in ────────────
-const AUTH_ONLY_ROUTES = ['/login', '/register', '/maintenance', '/admin/login'];
+const AUTH_ONLY_ROUTES = ['/login', '/register', '/admin/login'];
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, setUser, logout } = useAuthStore();
@@ -42,6 +42,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
       if (!pathname.startsWith('/admin') && pathname !== '/maintenance' && isMaitenanceMode) {
         router.replace('/maintenance');
+        return;
+      }
+
+      if (pathname === '/maintenance') {
+        setLoading(false);
         return;
       }
 
@@ -123,10 +128,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
   const isAuthOnly = AUTH_ONLY_ROUTES.includes(pathname);
-  const shouldWaitForMaintenanceCheck =
-    settingsLoading && !pathname.startsWith('/admin') && pathname !== '/maintenance';
 
-  if ((loading && (isProtected || isAuthOnly)) || shouldWaitForMaintenanceCheck) {
+  useEffect(() => {
+    if (
+      !settingsLoading &&
+      isMaitenanceMode &&
+      !pathname.startsWith('/admin') &&
+      pathname !== '/maintenance'
+    ) {
+      router.replace('/maintenance');
+    }
+  }, [settingsLoading, isMaitenanceMode, pathname, router]);
+
+  if (loading && (isProtected || isAuthOnly)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />

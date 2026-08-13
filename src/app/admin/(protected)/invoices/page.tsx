@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Download } from 'lucide-react';
 import { Invoice } from '@/lib/types';
-import { useAdminTable } from '@/hooks/useAdminTable';
+import { useTable } from '@/hooks/useTable';
 import SortableHeader from '@/components/admin/table/SortableHeader';
 import AdminPagination from '@/components/admin/table/AdminPagination';
 import AdminSearch from '@/components/admin/table/AdminSearch';
@@ -37,7 +37,7 @@ export default function AdminInvoicesPage() {
     setSort,
     setLimit,
     refresh,
-  } = useAdminTable<Invoice>({
+  } = useTable<Invoice>({
     endpoint: '/invoices/admin/all',
     defaultSort: 'issuedAt',
   });

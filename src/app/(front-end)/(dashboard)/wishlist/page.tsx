@@ -7,6 +7,7 @@ import { Product } from '@/lib/types';
 import { toast } from 'sonner';
 import { Heart, ShoppingCart, Trash2 } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
+import Image from 'next/image';
 
 export default function WishlistPage() {
   const { fetchCart } = useCartStore();
@@ -85,10 +86,12 @@ export default function WishlistPage() {
               <Link href={`/products/${product.slug}`}>
                 <div className="aspect-square bg-gray-100">
                   {product.images?.[0] ? (
-                    <img
+                    <Image
                       src={product.images[0].url}
                       alt={product.name}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
+                      width={100}
+                      height={120}
                     />
                   ) : null}
                 </div>

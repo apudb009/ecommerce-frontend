@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { useAdminTable } from '@/hooks/useAdminTable';
+import { useTable } from '@/hooks/useTable';
 import AdminSearch from '@/components/admin/table/AdminSearch';
 import AdminPagination from '@/components/admin/table/AdminPagination';
 import SortableHeader from '@/components/admin/table/SortableHeader';
@@ -47,7 +47,7 @@ export default function AdminOrdersClient() {
     setFilter,
     setSort,
     setLimit,
-  } = useAdminTable<Order & { user: User }>({
+  } = useTable<Order & { user: User }>({
     endpoint: '/orders/admin/all',
     defaultSort: 'createdAt',
   });
