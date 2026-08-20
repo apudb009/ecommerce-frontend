@@ -139,10 +139,10 @@ function SliderCard({ product, index }: { product: Product; index: number }) {
         <p className="line-clamp-2 text-xs font-medium text-gray-900">{product.name}</p>
 
         {/* rating */}
-        {product.averageRating && (
+        {product.avgRating && (
           <div className="mt-1 flex items-center gap-1">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs text-gray-400">{product.averageRating}</span>
+            <span className="text-xs text-gray-400">{product.avgRating}</span>
           </div>
         )}
 

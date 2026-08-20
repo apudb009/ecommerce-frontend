@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Review, PaginatedResponse } from '@/lib/types';
+import { Review, PaginatedResponse, ReviewSummary } from '@/lib/types';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -11,13 +11,13 @@ import { format } from 'date-fns';
 import { MessageSquare } from 'lucide-react';
 import { useSettingsStore } from '@/store/settingsStore';
 
-interface ReviewSummary {
-  averageRating: number | null;
-  totalReviews: number;
-  ratingBreakdown: Record<number, number>;
-}
-
-export default function ReviewSection({ productId }: { productId: number }) {
+export default function ReviewSection({
+  productId,
+  onReviewUpdateAction,
+}: {
+  productId: number;
+  onReviewUpdateAction: (average: number, count: number) => void;
+}) {
   const router = useRouter();
   const { user } = useAuthStore();
 
@@ -37,6 +37,7 @@ export default function ReviewSection({ productId }: { productId: number }) {
       );
       setReviews(data.data);
       setSummary(data.summary!);
+      onReviewUpdateAction(data.summary!.averageRating ?? 0, data.summary!.totalReviews);
     } catch {
       // silent fail
     } finally {

@@ -209,8 +209,8 @@ export default function ProductsClient({
                       <p className="text-lg font-bold text-gray-900">
                         ${Number(product.price).toFixed(2)}
                       </p>
-                      {product.averageRating && (
-                        <p className="text-xs text-yellow-500">★ {product.averageRating}</p>
+                      {product.avgRating && (
+                        <p className="text-xs text-yellow-500">★ {product.avgRating}</p>
                       )}
                     </div>
                   </div>

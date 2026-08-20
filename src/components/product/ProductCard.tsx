@@ -170,11 +170,11 @@ export default function ProductCard({ product, index }: { product: Product; inde
         <h3 className="mt-1 line-clamp-2 text-sm font-medium text-gray-900">{product.name}</h3>
 
         {/* rating */}
-        {product.averageRating !== null && (
+        {product.avgRating !== null && (
           <div className="mt-1 flex items-center gap-1">
             <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
             <span className="text-xs text-gray-500">
-              {product.averageRating} ({product._count?.reviews || 0})
+              {product.avgRating} ({product._count?.reviews || 0})
             </span>
           </div>
         )}

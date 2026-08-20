@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://shopapp.com';
-const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || 'ShopApp';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://ecommarceApp.com';
+const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || 'Ecommarce App';
 
 // ── BASE METADATA (fallback for all pages) ─────────
 export const baseMetadata: Metadata = {

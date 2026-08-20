@@ -13,7 +13,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     // wait for auth to settle before redirecting away from an admin page
-    const timer = setTimeout(() => {
+    const load = () => {
       const token = getToken();
 
       if (!token) {
@@ -31,10 +31,10 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
       }
 
       setChecked(true);
-    }, 10);
+    };
 
-    return () => clearTimeout(timer);
-  }, [user, router]);
+    load();
+  }, [user, router, pathname]);
 
   if (!checked) {
     return (

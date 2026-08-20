@@ -20,7 +20,6 @@ import { ShoppingCart, Minus, Plus, ChevronLeft, Zap } from 'lucide-react';
 import CountdownTimer from '../ui/CountdownTimer';
 import ImageGallery from './Product/ImageGallery';
 import TrustBadges from './Product/TrustBadges';
-import Loader from './Product/Loader';
 
 type Props = {
   slug: string;
@@ -33,8 +32,6 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
   const { user } = useAuthStore();
   const { fetchCart } = useCartStore();
 
-  //const [product, setProduct] = useState<Product | null>(null);
-  //const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [addingToCart, setAddingToCart] = useState(false);
@@ -44,6 +41,10 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
 
   const [activeSale, setActiveSale] = useState<FlashSale | null>(null);
   const [flashPrice, setFlashPrice] = useState<number | null>(null);
+
+  //Reviews
+  const [averageReviewCount, setAverageReviewCount] = useState(product.avgRating ?? 0);
+  const [reviewCount, setReviewCount] = useState(product._count?.reviews ?? 0);
 
   const [images, setImages] = useState<ProductImage[] | ProductVariantImage[]>(
     product?.images || [],
@@ -61,25 +62,19 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      //setLoading(true);
       try {
-        //const { data } = await api.get(`/products/${slug}`);
-
         // fetch variants by product id
         if (product.id) {
           const { data: variantData } = await api.get(`/products/${product.id}/variants`);
           setVariants(variantData);
         }
 
-        //setProduct(data);
         setSelectedImage(0);
         setQuantity(1);
         setImages(product.images);
       } catch {
         toast.error('Product not found');
         router.push('/products');
-      } finally {
-        //setLoading(false);
       }
     };
 
@@ -166,6 +161,11 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
     if (user && isAddedToCart) router.push('/checkout');
   };
 
+  const onReviewUpdateAction = (average: number, count: number) => {
+    setAverageReviewCount(average);
+    setReviewCount(count);
+  };
+
   const isOutOfStock = product.stock === 0;
 
   return (
@@ -196,11 +196,11 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
           <h1 className="mt-1 text-2xl font-bold text-gray-900">{product.name}</h1>
 
           {/* rating */}
-          {product.averageRating !== null && (
+          {!!averageReviewCount && (
             <div className="mt-2 flex items-center gap-2">
-              <StarRating rating={Math.round(product.averageRating)} size="sm" />
+              <StarRating rating={Math.round(averageReviewCount)} size="sm" />
               <span className="text-sm text-gray-500">
-                {product.averageRating} ({product._count?.reviews || 0} reviews)
+                {averageReviewCount} ({reviewCount} reviews)
               </span>
             </div>
           )}
@@ -405,7 +405,7 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
 
       {/* ── REVIEWS ────────────────────────────────────── */}
       <div className="mt-12">
-        <ReviewSection productId={product.id} />
+        <ReviewSection productId={product.id} onReviewUpdateAction={onReviewUpdateAction} />
       </div>
     </div>
   );

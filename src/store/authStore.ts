@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { User, UserPermission } from '@/lib/types';
 import { clearTokens } from '@/lib/api';
+import { useCartStore } from './cartStore';
 
 interface AuthState {
   user: User | null;
@@ -29,5 +30,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     clearTokens();
     set({ user: null, permissions: [], isAuthenticated: false });
+    //clear cart too
+    useCartStore.getState().clearCart();
   },
 }));

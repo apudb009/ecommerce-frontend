@@ -41,7 +41,7 @@ export interface Product {
   categoryId: number;
   category?: { id: number; name: string; slug: string };
   reviews?: Review[];
-  averageRating: number | null;
+  avgRating: number | null;
   _count?: { reviews: number };
 }
 

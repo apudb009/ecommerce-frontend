@@ -1,6 +1,8 @@
+'use client';
+
 import { CouponResult } from '@/lib/types';
 import { CheckCircle } from 'lucide-react';
-import router from 'next/router';
+import { useRouter } from 'next/navigation';
 import { FC } from 'react';
 
 type Props = {
@@ -10,6 +12,8 @@ type Props = {
 };
 
 const OrderSuccess: FC<Props> = ({ couponResult, orderId, discount }) => {
+  const router = useRouter();
+
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <CheckCircle className="mb-4 h-16 w-16 text-green-500" />

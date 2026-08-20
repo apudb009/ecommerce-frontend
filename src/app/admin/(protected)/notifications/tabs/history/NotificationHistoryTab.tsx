@@ -1,4 +1,6 @@
+import AdminPagination from '@/components/admin/table/AdminPagination';
 import { hasPermission } from '@/helpers/checkPermission';
+import { useTable } from '@/hooks/useTable';
 import api from '@/lib/api';
 import { UserPermission, Notification } from '@/lib/types';
 import { format } from 'date-fns';
@@ -12,22 +14,40 @@ type Props = {
 
 // ── NOTIFICATION HISTORY TAB ────────────────────────
 function NotificationHistoryTab({ permissions }: Props) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: notifications,
+    meta,
+    loading,
+    limit,
+    search,
+    sort,
+    order,
+    setPage,
+    setSearch,
+    setFilter,
+    setSort,
+    setLimit,
+    refresh,
+  } = useTable<Notification>({
+    endpoint: '/notifications/admin/all',
+    defaultSort: 'createdAt',
+  });
+  //const [notifications, setNotifications] = useState<Notification[]>([]);
+  //const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const { data } = await api.get('/notifications/admin/all');
-        setNotifications(data);
-      } catch {
-        toast.error('Failed to load notifications');
-      } finally {
-        setLoading(false);
-      }
-    };
-    void load();
-  }, []);
+  // useEffect(() => {
+  //   const load = async () => {
+  //     try {
+  //       const { data } = await api.get('/notifications/admin/all');
+  //       setNotifications(data);
+  //     } catch {
+  //       toast.error('Failed to load notifications');
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   void load();
+  // }, []);
 
   if (loading) {
     return (
@@ -99,6 +119,19 @@ function NotificationHistoryTab({ permissions }: Props) {
           ))}
         </tbody>
       </table>
+      {/* ── PAGINATION ───────────────────────────── */}
+      {meta && (
+        <AdminPagination
+          page={meta.page}
+          lastPage={meta.lastPage}
+          total={meta.total}
+          limit={limit}
+          hasNextPage={meta.hasNextPage}
+          hasPrevPage={meta.hasPrevPage}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+        />
+      )}
     </div>
   );
 }
