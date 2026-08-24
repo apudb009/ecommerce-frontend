@@ -168,7 +168,7 @@ export default function AdminOrdersClient() {
                         </p>
                       </td>
                       <td className="px-4 py-3 font-semibold text-gray-900">
-                        ${Number(order.totalAmount).toFixed(2)}
+                        ${Number(order.grandTotalAmount).toFixed(2)}
                       </td>
                       <td className="px-4 py-3">
                         <span

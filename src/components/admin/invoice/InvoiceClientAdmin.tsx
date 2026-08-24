@@ -171,7 +171,7 @@ export default function AdminInvoicesPage() {
                       <td className="px-4 py-3 text-gray-600">
                         {invoice.user?.name || invoice.user?.email}
                       </td>
-                      <td className="px-4 py-3 text-gray-500">#{invoice.order?.id}</td>
+                      <td className="px-4 py-3 text-gray-500">#{invoice.orderId}</td>
                       <td className="px-4 py-3 text-gray-500">
                         {format(new Date(invoice.issuedAt), 'MMM d, yyyy')}
                       </td>
