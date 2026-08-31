@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const { slug } = await params;
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${slug}`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 300 },
     });
 
     if (!res.ok) {
@@ -46,7 +46,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 async function fetchProduct(slug: string) {
-  const product = await serverFetch<Product>(`/products/${slug}`);
+  const product = await serverFetch<Product>(`/products/${slug}`, {
+    tags: ['products'],
+    revalidate: 300,
+  });
   return product;
 }
 

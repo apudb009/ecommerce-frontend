@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Banner, FlashSale, Product } from '@/lib/types';
+import { Suspense } from 'react';
+import { Banner, Category, FlashSale, Product } from '@/lib/types';
 import BannerSlider from '@/components/home/BannerSlider';
 import ProductSlider from '@/components/home/ProductSlider';
 import { Tag, Zap, TrendingUp } from 'lucide-react';
@@ -8,20 +9,18 @@ import Image from 'next/image';
 import { serverFetch } from '@/lib/server-api';
 import { NewsletterForm } from '@/components/home/NewsletterForm';
 
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  image: string | null;
-  _count: { products: number };
-}
-
 async function getHomeData() {
   const [banners, hotProducts, bestSellers, categories, flashSales] = await Promise.all([
-    serverFetch<Banner[]>('/banners', { tags: ['banners'] }).catch(() => []),
-    serverFetch<Product[]>('/products/hot', { tags: ['products'] }).catch(() => []),
-    serverFetch<Product[]>('/products/best-sellers', { tags: ['products'] }).catch(() => []),
-    serverFetch<Category[]>('/categories', { tags: ['categories'] }).catch(() => []),
+    serverFetch<Banner[]>('/banners', { tags: ['banners'], revalidate: 600 }).catch(() => []),
+    serverFetch<Product[]>('/products/hot', { tags: ['products'], revalidate: 600 }).catch(
+      () => [],
+    ),
+    serverFetch<Product[]>('/products/best-sellers', { tags: ['products'], revalidate: 600 }).catch(
+      () => [],
+    ),
+    serverFetch<Category[]>('/categories', { tags: ['categories'], revalidate: 3600 }).catch(
+      () => [],
+    ),
     serverFetch<FlashSale[]>('/flash-sales/active', { revalidate: 30 }).catch(() => []), // shorter TTL — time-sensitive
   ]);
   return { banners, hotProducts, bestSellers, categories, flashSales };
@@ -49,7 +48,11 @@ export default async function HomePage() {
         </div>
       )}
 
-      {flashSales.length > 0 && <FlashSaleBanner sales={flashSales} />}
+      {flashSales.length > 0 && (
+        <Suspense fallback={<div>Loading...</div>}>
+          <FlashSaleBanner sales={flashSales} />
+        </Suspense>
+      )}
 
       {/* ── CATEGORY QUICK LINKS ──────────────────────── */}
       {categories.length > 0 && (
@@ -81,7 +84,7 @@ export default async function HomePage() {
                 <span className="text-xs font-medium text-gray-700 group-hover:text-blue-600">
                   {cat.name}
                 </span>
-                <span className="text-xs text-gray-400">{cat._count.products}</span>
+                <span className="text-xs text-gray-400">{cat._count!.products}</span>
               </Link>
             ))}
           </div>
