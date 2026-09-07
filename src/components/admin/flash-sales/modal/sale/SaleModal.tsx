@@ -1,5 +1,6 @@
 import api from '@/lib/api';
 import { FlashSale } from '@/lib/types';
+import { useSettingsStore } from '@/store/settingsStore';
 import { Zap } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -15,6 +16,9 @@ function FlashSaleModal({
   onSaved: (sale: FlashSale) => void;
 }) {
   const isEdit = !!sale;
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   const toDatetimeLocal = (date?: string) => {
     if (!date) return '';
@@ -101,12 +105,12 @@ function FlashSaleModal({
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="PERCENTAGE">Percentage (%)</option>
-                <option value="FIXED">Fixed ($)</option>
+                <option value="FIXED">Fixed ({currencySymbol})</option>
               </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                Value ({form.discountType === 'PERCENTAGE' ? '%' : '$'})
+                Value ({form.discountType === 'PERCENTAGE' ? '%' : `${currencySymbol}`})
               </label>
               <input
                 type="number"

@@ -1,4 +1,5 @@
 import { Cart, CouponResult } from '@/lib/types';
+import { useSettingsStore } from '@/store/settingsStore';
 import { ShoppingBag, Tag } from 'lucide-react';
 import Image from 'next/image';
 import { FC } from 'react';
@@ -21,6 +22,9 @@ const OrderSummary: FC<Props> = ({
   tax,
   total,
 }) => {
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   return (
     <div>
       <div className="sticky top-20 rounded-lg border bg-white p-5">
@@ -54,11 +58,13 @@ const OrderSummary: FC<Props> = ({
                   </p>
                 )}
                 <p className="text-xs text-gray-400">
-                  ${Number(item.product.price).toFixed(2)} × {item.quantity}
+                  {currencySymbol}
+                  {Number(item.product.price).toFixed(2)} × {item.quantity}
                 </p>
               </div>
               <p className="shrink-0 text-sm font-medium text-gray-900">
-                ${item.subtotal.toFixed(2)}
+                {currencySymbol}
+                {item.subtotal.toFixed(2)}
               </p>
             </div>
           ))}
@@ -68,7 +74,10 @@ const OrderSummary: FC<Props> = ({
         <div className="mt-4 space-y-2 border-t pt-4 text-sm">
           <div className="flex justify-between text-gray-500">
             <span>Subtotal</span>
-            <span>${subtotal.toFixed(2)}</span>
+            <span>
+              {currencySymbol}
+              {subtotal.toFixed(2)}
+            </span>
           </div>
 
           {/* ── DISCOUNT ROW ────────────────────────── */}
@@ -78,7 +87,10 @@ const OrderSummary: FC<Props> = ({
                 <Tag className="h-3.5 w-3.5" />
                 Discount ({couponResult?.coupon.code})
               </span>
-              <span>-${discount.toFixed(2)}</span>
+              <span>
+                -{currencySymbol}
+                {discount.toFixed(2)}
+              </span>
             </div>
           )}
 
@@ -88,26 +100,33 @@ const OrderSummary: FC<Props> = ({
               {shipping === 0 ? (
                 <span className="text-green-600">Free</span>
               ) : (
-                `$${shipping.toFixed(2)}`
+                `${currencySymbol}${shipping.toFixed(2)}`
               )}
             </span>
           </div>
 
           <div className="flex justify-between text-gray-500">
             <span>Tax (8%)</span>
-            <span>${tax.toFixed(2)}</span>
+            <span>
+              {currencySymbol}
+              {tax.toFixed(2)}
+            </span>
           </div>
 
           {/* ── TOTAL ───────────────────────────────── */}
           <div className="flex justify-between border-t pt-3 text-base font-bold text-gray-900">
             <span>Total</span>
-            <span>${total.toFixed(2)}</span>
+            <span>
+              {currencySymbol}
+              {total.toFixed(2)}
+            </span>
           </div>
 
           {/* savings badge */}
           {discount > 0 && (
             <div className="rounded-md bg-green-50 px-3 py-2 text-center text-xs font-medium text-green-700">
-              🎉 You&apos;re saving ${discount.toFixed(2)} on this order!
+              🎉 You&apos;re saving {currencySymbol}
+              {discount.toFixed(2)} on this order!
             </div>
           )}
         </div>

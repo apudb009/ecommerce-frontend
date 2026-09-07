@@ -1,6 +1,7 @@
 'use client';
 
 import { CouponResult } from '@/lib/types';
+import { useSettingsStore } from '@/store/settingsStore';
 import { CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FC } from 'react';
@@ -13,6 +14,9 @@ type Props = {
 
 const OrderSuccess: FC<Props> = ({ couponResult, orderId, discount }) => {
   const router = useRouter();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -21,8 +25,12 @@ const OrderSuccess: FC<Props> = ({ couponResult, orderId, discount }) => {
       <p className="mt-2 text-gray-500">Your order #{orderId} has been confirmed.</p>
       {couponResult && (
         <p className="mt-1 text-sm text-green-600">
-          You saved <strong>${discount.toFixed(2)}</strong> with coupon{' '}
-          <strong>{couponResult.coupon.code}</strong>!
+          You saved{' '}
+          <strong>
+            {currencySymbol}
+            {discount.toFixed(2)}
+          </strong>{' '}
+          with coupon <strong>{couponResult.coupon.code}</strong>!
         </p>
       )}
       <div className="mt-6 flex gap-3">

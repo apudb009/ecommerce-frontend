@@ -5,7 +5,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Coupon, CouponType } from '@/lib/types';
+import { Coupon } from '@/lib/types';
 import { useTable } from '@/hooks/useTable';
 import AdminSearch from '@/components/admin/table/AdminSearch';
 import AdminPagination from '@/components/admin/table/AdminPagination';
@@ -15,6 +15,7 @@ import { hasPermission } from '@/helpers/checkPermission';
 import RestrictedAccess from '@/components/admin/RestrictedAccess';
 import DeleteModal from '@/components/ui/DeleteModal';
 import CouponModal from './modals/Coupon';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function AdminCouponsPage() {
   const {
@@ -36,6 +37,9 @@ export default function AdminCouponsPage() {
   });
 
   const { permissions } = useAuthStore();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Coupon | null>(null);
   const [activeCoupon, setActiveCoupon] = useState<Coupon>();
@@ -137,7 +141,7 @@ export default function AdminCouponsPage() {
                       <td className="px-4 py-3 font-medium text-gray-900">
                         {coupon.type === 'PERCENTAGE'
                           ? `${coupon.value}%`
-                          : `$${Number(coupon.value).toFixed(2)}`}
+                          : `${currencySymbol}${Number(coupon.value).toFixed(2)}`}
                       </td>
                       <td className="px-4 py-3 text-gray-500">
                         {coupon.usedCount}

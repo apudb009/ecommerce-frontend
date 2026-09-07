@@ -31,6 +31,7 @@ import {
   TopProducts,
   UsersAnalitics,
 } from '@/lib/types';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const PIE_COLORS = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#db2777'];
 
@@ -46,6 +47,9 @@ export default function AdminDashboardPage() {
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [ratedProducts, setRatedProducts] = useState<MostRatedProducts[]>([]);
   const [loading, setLoading] = useState(true);
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -110,7 +114,7 @@ export default function AdminDashboardPage() {
   const statCards = [
     {
       label: 'Total Revenue',
-      value: `$${overview?.totalRevenue?.toFixed(2) || '0.00'}`,
+      value: `${currencySymbol}${overview?.totalRevenue?.toFixed(2) || '0.00'}`,
       icon: DollarSign,
       color: 'text-green-600',
       bg: 'bg-green-50',
@@ -184,7 +188,10 @@ export default function AdminDashboardPage() {
             />
             <YAxis tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11 }} />
             <Tooltip
-              formatter={(value) => [`$${Number(value ?? 0).toFixed(2)}`, 'Revenue']}
+              formatter={(value) => [
+                `${currencySymbol}${Number(value ?? 0).toFixed(2)}`,
+                'Revenue',
+              ]}
               labelFormatter={(l) => format(new Date(l), 'MMM d, yyyy')}
             />
             <Line
@@ -260,7 +267,8 @@ export default function AdminDashboardPage() {
                   <p className="text-xs text-gray-400">{p.totalSold} sold</p>
                 </div>
                 <span className="text-sm font-semibold text-green-600">
-                  ${p.revenue.toFixed(2)}
+                  {currencySymbol}
+                  {p.revenue.toFixed(2)}
                 </span>
               </div>
             ))}
@@ -291,9 +299,15 @@ export default function AdminDashboardPage() {
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={catData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis type="number" tickFormatter={(v) => `$${v}`} tick={{ fontSize: 10 }} />
+              <XAxis
+                type="number"
+                tickFormatter={(v) => `${currencySymbol}${v}`}
+                tick={{ fontSize: 10 }}
+              />
               <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={80} />
-              <Tooltip formatter={(v) => [`$${Number(v ?? 0).toFixed(2)}`, 'Revenue']} />
+              <Tooltip
+                formatter={(v) => [`${currencySymbol}${Number(v ?? 0).toFixed(2)}`, 'Revenue']}
+              />
               <Bar dataKey="revenue" fill="#7c3aed" radius={[0, 3, 3, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -385,7 +399,8 @@ export default function AdminDashboardPage() {
                   </span>
                 </td>
                 <td className="py-2 text-right font-medium text-gray-900">
-                  ${Number(order.totalAmount).toFixed(2)}
+                  {currencySymbol}
+                  {Number(order.totalAmount).toFixed(2)}
                 </td>
               </tr>
             ))}

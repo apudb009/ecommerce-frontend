@@ -2,10 +2,14 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function ActiveFilterTags() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   const tags: { label: string; key: string; value?: string }[] = [];
 
@@ -18,8 +22,8 @@ export default function ActiveFilterTags() {
   const colors = searchParams.get('colors');
 
   if (search) tags.push({ label: `"${search}"`, key: 'search' });
-  if (minPrice) tags.push({ label: `Min $${minPrice}`, key: 'minPrice' });
-  if (maxPrice) tags.push({ label: `Max $${maxPrice}`, key: 'maxPrice' });
+  if (minPrice) tags.push({ label: `Min ${currencySymbol}${minPrice}`, key: 'minPrice' });
+  if (maxPrice) tags.push({ label: `Max ${currencySymbol}${maxPrice}`, key: 'maxPrice' });
   if (inStock) tags.push({ label: 'In Stock', key: 'inStock' });
   if (minRating) tags.push({ label: `${minRating}★ & up`, key: 'minRating' });
   if (variantValues) {

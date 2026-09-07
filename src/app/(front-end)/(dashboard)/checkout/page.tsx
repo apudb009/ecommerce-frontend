@@ -6,13 +6,14 @@ import { Elements } from '@stripe/react-stripe-js';
 import api from '@/lib/api';
 import { stripePromise } from '@/lib/stripe';
 import { useCartStore } from '@/store/cartStore';
-import { Address } from '@/lib/types';
+import { Address, Shipping, Tax } from '@/lib/types';
 import AddressSelector from '@/components/checkout/AddressSelector';
 import PaymentForm from '@/components/checkout/PaymentForm';
 import { toast } from 'sonner';
 import OrderSuccess from './OrderSuccess';
 import OrderSummary from './OrderSummary';
 import Coupon from './Coupon';
+import { useSettingsStore } from '@/store/settingsStore';
 
 type Step = 'address' | 'payment' | 'success';
 
@@ -29,6 +30,9 @@ interface CouponResult {
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, fetchCart, clearCart } = useCartStore();
+  const {
+    settings: { currency_symbol: currencySymbol, free_shipping_threshold: freeShippingThreshold },
+  } = useSettingsStore();
 
   const [step, setStep] = useState<Step>('address');
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -43,6 +47,9 @@ export default function CheckoutPage() {
 
   const [orderId, setOrderId] = useState<number | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+
+  const [tax, setTax] = useState<Tax>();
+  const [shipping, setShipping] = useState<Shipping>();
 
   // ── INITIAL LOAD ────────────────────────────────────
   useEffect(() => {
@@ -64,6 +71,19 @@ export default function CheckoutPage() {
 
     void init();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── FETCH TAX AND SHIPPING ─────────────────────────────
+  useEffect(() => {
+    const getTaxAndShipping = async () => {
+      const [taxRes, shippingRes] = await Promise.all([
+        api.get('taxes/active'),
+        api.get('shipping/active'),
+      ]);
+      setTax(taxRes.data);
+      setShipping(shippingRes.data);
+    };
+    getTaxAndShipping();
+  }, []);
 
   // ── INITIAL LOAD FOR COUPON ────────────────────────────────────
   useEffect(() => {
@@ -111,7 +131,7 @@ export default function CheckoutPage() {
       });
       await fetchCart();
 
-      toast.success(`Coupon applied! You save $${data.discount.toFixed(2)}`);
+      toast.success(`Coupon applied! You save ${currencySymbol}${data.discount.toFixed(2)}`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Invalid coupon');
@@ -132,11 +152,12 @@ export default function CheckoutPage() {
 
   // ── DERIVED AMOUNTS ─────────────────────────────────
   const subtotal = cart?.totalAmount || 0;
-  const shipping = subtotal > 50 ? 0 : 9.99;
+  const shippingAmount =
+    subtotal > Number(freeShippingThreshold ?? '0') ? Number(shipping?.price ?? 0) : 0;
+  const taxAmount = tax?.type === 'FIXED' ? tax.rate : subtotal * (Number(tax?.rate ?? 0) / 100);
   const discount = couponResult?.discount || 0;
   const taxBase = Math.max(0, subtotal - discount);
-  const tax = taxBase * 0.08;
-  const total = Math.max(0, taxBase + shipping + tax);
+  const total = Math.max(0, taxBase + shippingAmount + taxAmount);
 
   // ── PLACE ORDER ─────────────────────────────────────
   const handlePlaceOrder = async () => {
@@ -254,8 +275,8 @@ export default function CheckoutPage() {
           subtotal={subtotal}
           discount={discount}
           couponResult={couponResult}
-          shipping={shipping}
-          tax={tax}
+          shipping={shippingAmount}
+          tax={taxAmount}
           total={total}
         />
       </div>

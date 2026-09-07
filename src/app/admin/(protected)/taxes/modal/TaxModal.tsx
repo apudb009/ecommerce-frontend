@@ -1,5 +1,6 @@
 import api from '@/lib/api';
 import { Tax, TaxType } from '@/lib/types';
+import { useSettingsStore } from '@/store/settingsStore';
 import { FC, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -19,6 +20,9 @@ const TaxModal: FC<Props> = ({ tax, onClose, onSaved }) => {
     isActive: tax?.isActive ?? false,
   });
   const [loading, setLoading] = useState(false);
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,12 +85,12 @@ const TaxModal: FC<Props> = ({ tax, onClose, onSaved }) => {
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="PERCENTAGE">Percentage (%)</option>
-                <option value="FIXED">Fixed ($)</option>
+                <option value="FIXED">Fixed ({currencySymbol})</option>
               </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                Rate ({form.type === 'PERCENTAGE' ? '%' : '$'})
+                Rate ({form.type === 'PERCENTAGE' ? '%' : `${currencySymbol}`})
               </label>
               <input
                 type="number"
@@ -107,8 +111,8 @@ const TaxModal: FC<Props> = ({ tax, onClose, onSaved }) => {
               Preview: On a $100 order, tax would be{' '}
               <strong>
                 {form.type === 'PERCENTAGE'
-                  ? `$${((100 * Number(form.rate)) / 100).toFixed(2)}`
-                  : `$${Number(form.rate).toFixed(2)}`}
+                  ? `${currencySymbol}${((100 * Number(form.rate)) / 100).toFixed(2)}`
+                  : `${currencySymbol}${Number(form.rate).toFixed(2)}`}
               </strong>
             </div>
           )}

@@ -23,6 +23,10 @@ type VariantFormState = {
   images: string[];
 };
 
+type FormErrors = Partial<
+  Record<'name' | 'slug' | 'price' | 'stock' | 'categoryId' | 'images', string>
+>;
+
 export default function ProductForm({ product }: { product?: Product }) {
   const { permissions } = useAuthStore();
   const router = useRouter();
@@ -32,6 +36,7 @@ export default function ProductForm({ product }: { product?: Product }) {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [newProduct, setNewProduct] = useState<Product | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   // add state for variants
   const [variants, setVariants] = useState<Variant[]>([]);
@@ -69,6 +74,10 @@ export default function ProductForm({ product }: { product?: Product }) {
       .catch(() => {});
   }, []);
 
+  const clearError = (field: keyof FormErrors) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
   const handleNameChange = (value: string) => {
     setForm((f) => ({
       ...f,
@@ -80,16 +89,69 @@ export default function ProductForm({ product }: { product?: Product }) {
             .replace(/\s+/g, '-')
             .replace(/[^a-z0-9-]/g, ''),
     }));
+    clearError('name');
+    if (!isEdit) clearError('slug');
+  };
+
+  const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+  const validate = (): FormErrors => {
+    const next: FormErrors = {};
+
+    const name = form.name.trim();
+    if (!name) {
+      next.name = 'Product name is required';
+    } else if (name.length < 2) {
+      next.name = 'Name must be at least 2 characters';
+    } else if (name.length > 150) {
+      next.name = 'Name must be under 150 characters';
+    }
+
+    const slug = form.slug.trim();
+    if (!slug) {
+      next.slug = 'Slug is required';
+    } else if (!SLUG_PATTERN.test(slug)) {
+      next.slug = 'Slug must be lowercase letters, numbers, and hyphens only';
+    }
+
+    if (!form.price.trim()) {
+      next.price = 'Price is required';
+    } else if (Number.isNaN(Number(form.price)) || Number(form.price) < 0) {
+      next.price = 'Enter a valid, non-negative price';
+    }
+
+    if (!form.stock.trim()) {
+      next.stock = 'Stock quantity is required';
+    } else if (!Number.isInteger(Number(form.stock)) || Number(form.stock) < 0) {
+      next.stock = 'Enter a valid, non-negative whole number';
+    }
+
+    if (!form.categoryId) {
+      next.categoryId = 'Please select a category';
+    }
+
+    if (images.length === 0) {
+      next.images = 'At least one product image is required';
+    }
+
+    return next;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
     setLoading(true);
 
     const payload = {
-      name: form.name,
-      slug: form.slug,
-      description: form.description || undefined,
+      name: form.name.trim(),
+      slug: form.slug.trim(),
+      description: form.description.trim() || undefined,
       price: Number(form.price),
       stock: Number(form.stock),
       categoryId: Number(form.categoryId),
@@ -162,9 +224,14 @@ export default function ProductForm({ product }: { product?: Product }) {
     );
   }
 
+  const errorClass = (field: keyof FormErrors) =>
+    `w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+      errors[field] ? 'border-red-400 focus:ring-red-400' : 'border-gray-300 focus:ring-blue-500'
+    }`;
+
   return (
     <>
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
+      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5" noValidate>
         {/* name + slug */}
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -172,18 +239,21 @@ export default function ProductForm({ product }: { product?: Product }) {
             <input
               value={form.name}
               onChange={(e) => handleNameChange(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className={errorClass('name')}
             />
+            {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Slug</label>
             <input
               value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              onChange={(e) => {
+                setForm({ ...form, slug: e.target.value });
+                clearError('slug');
+              }}
+              className={errorClass('slug')}
             />
+            {errors.slug && <p className="mt-1 text-xs text-red-500">{errors.slug}</p>}
           </div>
         </div>
 
@@ -206,20 +276,26 @@ export default function ProductForm({ product }: { product?: Product }) {
               type="number"
               step="0.01"
               value={form.price}
-              onChange={(e) => setForm({ ...form, price: e.target.value })}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              onChange={(e) => {
+                setForm({ ...form, price: e.target.value });
+                clearError('price');
+              }}
+              className={errorClass('price')}
             />
+            {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Stock Quantity</label>
             <input
               type="number"
               value={form.stock}
-              onChange={(e) => setForm({ ...form, stock: e.target.value })}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              onChange={(e) => {
+                setForm({ ...form, stock: e.target.value });
+                clearError('stock');
+              }}
+              className={errorClass('stock')}
             />
+            {errors.stock && <p className="mt-1 text-xs text-red-500">{errors.stock}</p>}
           </div>
         </div>
 
@@ -228,9 +304,11 @@ export default function ProductForm({ product }: { product?: Product }) {
           <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
           <select
             value={form.categoryId}
-            onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
+            onChange={(e) => {
+              setForm({ ...form, categoryId: e.target.value });
+              clearError('categoryId');
+            }}
+            className={errorClass('categoryId')}
           >
             <option value="">Select category</option>
             {categories.map((cat) => (
@@ -239,6 +317,7 @@ export default function ProductForm({ product }: { product?: Product }) {
               </option>
             ))}
           </select>
+          {errors.categoryId && <p className="mt-1 text-xs text-red-500">{errors.categoryId}</p>}
         </div>
 
         {/* images */}
@@ -246,11 +325,15 @@ export default function ProductForm({ product }: { product?: Product }) {
           <label className="mb-1 block text-sm font-medium text-gray-700">Product Images</label>
           <ImageUpload
             images={images}
-            onChange={setImages}
+            onChange={(imgs) => {
+              setImages(imgs);
+              clearError('images');
+            }}
             maxImages={5}
             folder="products"
             product={product}
           />
+          {errors.images && <p className="mt-1 text-xs text-red-500">{errors.images}</p>}
         </div>
 
         {product?.id && (

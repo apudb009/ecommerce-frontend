@@ -11,6 +11,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { FlashSale } from '@/lib/types';
 import Image from 'next/image';
+import { useSettingsStore } from '@/store/settingsStore';
 
 function calcFlashPrice(price: number, type: string, value: number): number {
   if (type === 'PERCENTAGE') {
@@ -26,6 +27,9 @@ export default function FlashSaleBanner({ sales }: { sales: FlashSale[] }) {
 
   const { user } = useAuthStore();
   const { fetchCart } = useCartStore();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const router = useRouter();
 
   const activeSales = sales.filter((s) => !expired.includes(s.id));
@@ -150,8 +154,14 @@ export default function FlashSaleBanner({ sales }: { sales: FlashSale[] }) {
               </Link>
 
               <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-xl font-bold">${flashPrice.toFixed(2)}</span>
-                <span className="text-sm line-through opacity-60">${origPrice.toFixed(2)}</span>
+                <span className="text-xl font-bold">
+                  {currencySymbol}
+                  {flashPrice.toFixed(2)}
+                </span>
+                <span className="text-sm line-through opacity-60">
+                  {currencySymbol}
+                  {origPrice.toFixed(2)}
+                </span>
                 <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-bold">
                   -{savePct}%
                 </span>

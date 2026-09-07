@@ -9,6 +9,7 @@ import { ArrowLeft, Truck } from 'lucide-react';
 import OrderTimeline from '@/components/order/OrderTimeline';
 import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const STATUS_FLOW: Record<OrderStatus, OrderStatus[]> = {
   PENDING: ['PAID', 'CANCELLED'],
@@ -32,6 +33,9 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function AdminOrderDetailPage() {
   const { permissions } = useAuthStore();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const params = useParams();
   const router = useRouter();
   const orderId = Number(params.id);
@@ -238,13 +242,19 @@ export default function AdminOrderDetailPage() {
               <span className="text-gray-600">
                 {item.productName} × {item.quantity}
               </span>
-              <span className="font-medium text-gray-900">${Number(item.total).toFixed(2)}</span>
+              <span className="font-medium text-gray-900">
+                {currencySymbol}
+                {Number(item.total).toFixed(2)}
+              </span>
             </div>
           ))}
         </div>
         <div className="mt-3 flex justify-between border-t pt-3 font-semibold">
           <span>Total</span>
-          <span>${Number(order.totalAmount).toFixed(2)}</span>
+          <span>
+            {currencySymbol}
+            {Number(order.totalAmount).toFixed(2)}
+          </span>
         </div>
       </div>
 

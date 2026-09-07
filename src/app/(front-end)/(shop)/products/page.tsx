@@ -39,7 +39,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   ).toString();
 
   const data = await serverFetch<PaginatedResponse<Product>>(`/products?${query}`, {
-    revalidate: 60,
+    revalidate: 300,
   }).catch(() => ({ data: [], meta: null }));
 
   return <Products products={data.data ?? []} meta={data.meta} />;

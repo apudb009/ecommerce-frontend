@@ -8,21 +8,16 @@ import { Search, X, Loader2, TrendingUp } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import Image from 'next/image';
 import { Product } from '@/lib/types';
-
-// interface SearchResult {
-//   id: number;
-//   name: string;
-//   slug: string;
-//   price: string;
-//   images: string[];
-//   category: { name: string };
-// }
+import { useSettingsStore } from '@/store/settingsStore';
 
 const POPULAR_SEARCHES = ['iPhone', 'Nike', 'Samsung', 'Laptop', 'Headphones'];
 
 export default function SearchBar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -249,7 +244,8 @@ export default function SearchBar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }
                     <p className="text-xs text-gray-400">{product?.category?.name}</p>
                   </div>
                   <span className="shrink-0 text-sm font-semibold text-gray-900">
-                    ${Number(product.price).toFixed(2)}
+                    {currencySymbol}
+                    {Number(product.price).toFixed(2)}
                   </span>
                 </Link>
               ))}

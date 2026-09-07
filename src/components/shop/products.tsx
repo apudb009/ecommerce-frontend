@@ -10,6 +10,7 @@ import SearchBar from '@/components/product/SearchBar';
 import ActiveFilterTags from '@/components/product/ActiveFilterTags';
 import { SlidersHorizontal, ChevronLeft, ChevronRight, LayoutGrid, List } from 'lucide-react';
 import Link from 'next/link';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const SORT_OPTIONS = [
   { value: 'createdAt:desc', label: 'Newest First' },
@@ -29,6 +30,9 @@ export default function ProductsClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   const [showSidebar, setShowSidebar] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -207,7 +211,8 @@ export default function ProductsClient({
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-lg font-bold text-gray-900">
-                        ${Number(product.price).toFixed(2)}
+                        {currencySymbol}
+                        {Number(product.price).toFixed(2)}
                       </p>
                       {product.avgRating && (
                         <p className="text-xs text-yellow-500">★ {product.avgRating}</p>

@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function ProductSlider({
   title,
@@ -79,6 +80,9 @@ function SliderCard({ product, index }: { product: Product; index: number }) {
   const { user } = useAuthStore();
   const { fetchCart } = useCartStore();
   const [adding, setAdding] = useState(false);
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   const productImage = product?.images?.find((image) => image.isMain);
 
@@ -148,7 +152,8 @@ function SliderCard({ product, index }: { product: Product; index: number }) {
 
         <div className="mt-2 flex items-center justify-between">
           <span className="text-sm font-bold text-gray-900">
-            ${Number(product.price).toFixed(2)}
+            {currencySymbol}
+            {Number(product.price).toFixed(2)}
           </span>
           <button
             onClick={handleAddToCart}

@@ -4,6 +4,7 @@ import { Product } from '@/lib/types';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { VariantFormState } from '../form/ProductVariantForm';
+import { useSettingsStore } from '@/store/settingsStore';
 
 type Props = {
   product: Product;
@@ -24,6 +25,10 @@ function ProductVariantAddModal({ product, onClose, onSaved }: Props) {
     images: [],
   });
   const [loading, setLoading] = useState(false);
+
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   const generateSku = async (): Promise<string> => {
     const response = await api.post('/products/variants/getSku', {
@@ -177,7 +182,10 @@ function ProductVariantAddModal({ product, onClose, onSaved }: Props) {
               )}
               <span className="font-medium text-gray-700">{newVariant.value}</span>
               {newVariant.price && (
-                <span className="text-blue-600">${Number(newVariant.price).toFixed(2)}</span>
+                <span className="text-blue-600">
+                  {currencySymbol}
+                  {Number(newVariant.price).toFixed(2)}
+                </span>
               )}
               <span className="text-gray-400">Stock: {newVariant.stock}</span>
             </div>

@@ -15,11 +15,30 @@ export default function Footer() {
           {/* brand */}
           <div>
             <h3 className="text-lg font-bold text-blue-600">
-              🛒 {(settings?.store_name as string) || 'ShopApp'}
+              🛒 {(settings?.store_name as string) || 'Shop'}
             </h3>
             <p className="mt-2 text-sm text-gray-500">
               Your one-stop shop for everything you need.
             </p>
+            {settings?.store_email && (
+              <p className="mt-2 text-sm text-gray-500">
+                Email:{' '}
+                <a href={`mailto:${settings.store_email}`} className="text-blue-600">
+                  {settings.store_email}
+                </a>
+              </p>
+            )}
+            {settings?.store_phone && (
+              <p className="mt-1 text-sm text-gray-500">
+                Phone:{' '}
+                <a href={`tel:${settings.store_phone}`} className="text-blue-600">
+                  {settings.store_phone}
+                </a>
+              </p>
+            )}
+            {settings?.store_address && (
+              <p className="mt-1 text-sm text-gray-500">Address: {settings.store_address}</p>
+            )}
           </div>
 
           {/* links */}

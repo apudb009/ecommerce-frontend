@@ -5,11 +5,15 @@ import { Cart, Shipping, Tax } from '@/lib/types';
 import { Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function CartSummary({ cart }: { cart: Cart }) {
   const router = useRouter();
   const [tax, setTax] = useState<Tax>();
   const [shipping, setShipping] = useState<Shipping>();
+  const {
+    settings: { currency_symbol: currencySymbol, free_shipping_threshold: freeShippingThreshold },
+  } = useSettingsStore();
 
   useEffect(() => {
     const getTaxAndShipping = async () => {
@@ -23,7 +27,8 @@ export default function CartSummary({ cart }: { cart: Cart }) {
     getTaxAndShipping();
   }, []);
 
-  const shippingAmount = Number(shipping?.price ?? 0);
+  const shippingAmount =
+    cart.totalAmount > Number(freeShippingThreshold ?? '0') ? Number(shipping?.price ?? 0) : 0;
   const taxAmount =
     tax?.type === 'FIXED' ? tax.rate : cart.totalAmount * (Number(tax?.rate ?? 0) / 100); // 8% estimated tax
   const total = cart.totalAmount + shippingAmount + taxAmount;
@@ -36,34 +41,49 @@ export default function CartSummary({ cart }: { cart: Cart }) {
       <div className="space-y-2 text-sm">
         <div className="flex justify-between text-gray-600">
           <span>Subtotal ({cart.totalItems} items)</span>
-          <span>${cart.totalAmount.toFixed(2)}</span>
+          <span>
+            {currencySymbol}
+            {cart.totalAmount.toFixed(2)}
+          </span>
         </div>
         {/* ← flash savings row */}
         {totalSavings > 0 && (
           <div className="flex justify-between font-medium text-red-600">
             <span className="flex items-center gap-1">🔥 Flash Sale Savings</span>
-            <span>-${totalSavings.toFixed(2)}</span>
+            <span>
+              -{currencySymbol}
+              {totalSavings.toFixed(2)}
+            </span>
           </div>
         )}
         <div className="flex justify-between text-gray-600">
           <span>Shipping</span>
-          <span>{shippingAmount === 0 ? 'Free' : `$${shippingAmount.toFixed(2)}`}</span>
+          <span>
+            {shippingAmount === 0 ? 'Free' : `${currencySymbol}${shippingAmount.toFixed(2)}`}
+          </span>
         </div>
         <div className="flex justify-between text-gray-600">
           <span>Estimated Tax</span>
-          <span>${taxAmount.toFixed(2)}</span>
+          <span>
+            {currencySymbol}
+            {taxAmount.toFixed(2)}
+          </span>
         </div>
       </div>
 
       {cart.totalAmount < 50 && (
         <p className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-xs text-blue-700">
-          Add ${(50 - cart.totalAmount).toFixed(2)} more for free shipping!
+          Add {currencySymbol}
+          {(50 - cart.totalAmount).toFixed(2)} more for free shipping!
         </p>
       )}
 
       <div className="mt-4 flex justify-between border-t pt-4 text-base font-bold text-gray-900">
         <span>Total</span>
-        <span>${total.toFixed(2)}</span>
+        <span>
+          {currencySymbol}
+          {total.toFixed(2)}
+        </span>
       </div>
 
       <button

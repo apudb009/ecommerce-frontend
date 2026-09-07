@@ -13,6 +13,7 @@ import Image from 'next/image';
 import DeleteModal from '@/components/ui/DeleteModal';
 import AddProductsToSale from './SaleProducts';
 import FlashSaleModal from './modal/sale';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function FlashSalesClient() {
   const { permissions } = useAuthStore();
@@ -21,6 +22,9 @@ export default function FlashSalesClient() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<FlashSale | null>(null);
   const [activeSale, setActiveSale] = useState<FlashSale>();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -122,7 +126,7 @@ export default function FlashSalesClient() {
                         <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700">
                           {sale.discountType === 'PERCENTAGE'
                             ? `${sale.discountValue}% OFF`
-                            : `$${sale.discountValue} OFF`}
+                            : `{currencySymbol}${sale.discountValue} OFF`}
                         </span>
                       </div>
                       <p className="text-xs text-gray-400">
@@ -184,7 +188,8 @@ export default function FlashSalesClient() {
                           <div>
                             <p className="text-xs font-medium text-gray-800">{sp.product.name}</p>
                             <p className="text-xs text-gray-400">
-                              ${Number(sp.product.price).toFixed(2)}
+                              {currencySymbol}
+                              {Number(sp.product.price).toFixed(2)}
                             </p>
                           </div>
                           <button

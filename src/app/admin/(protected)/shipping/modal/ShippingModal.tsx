@@ -1,5 +1,6 @@
 import api from '@/lib/api';
 import { Shipping } from '@/lib/types';
+import { useSettingsStore } from '@/store/settingsStore';
 import { FC, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -11,6 +12,9 @@ type Props = {
 
 // ── SHIPPING MODAL ──────────────────────────────────
 const ShippingModal: FC<Props> = ({ method, onClose, onSaved }) => {
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const isEdit = !!method;
   const [form, setForm] = useState({
     name: method?.name || '',
@@ -71,7 +75,9 @@ const ShippingModal: FC<Props> = ({ method, onClose, onSaved }) => {
 
           {/* price */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Price ($)</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Price ({currencySymbol})
+            </label>
             <input
               type="number"
               value={form.price}

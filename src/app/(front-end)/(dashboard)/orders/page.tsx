@@ -7,6 +7,7 @@ import { Order, OrderStatus, PaginatedResponse } from '@/lib/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Package, ChevronRight } from 'lucide-react';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   PENDING: 'bg-yellow-100 text-yellow-700',
@@ -21,6 +22,10 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
 const STATUS_STEPS: OrderStatus[] = ['PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED'];
 
 export default function OrdersPage() {
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('');
@@ -122,7 +127,8 @@ export default function OrdersPage() {
               {/* price + arrow */}
               <div className="shrink-0 text-right">
                 <p className="font-semibold text-gray-900">
-                  ${Number(order.grandTotalAmount).toFixed(2)}
+                  {currencySymbol}
+                  {Number(order.grandTotalAmount).toFixed(2)}
                 </p>
                 <p className="text-xs text-gray-400">
                   {order.items.length} {order.items.length === 1 ? 'item' : 'items'}

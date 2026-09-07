@@ -20,6 +20,7 @@ import { ShoppingCart, Minus, Plus, ChevronLeft, Zap } from 'lucide-react';
 import CountdownTimer from '../ui/CountdownTimer';
 import ImageGallery from './Product/ImageGallery';
 import TrustBadges from './Product/TrustBadges';
+import { useSettingsStore } from '@/store/settingsStore';
 
 type Props = {
   slug: string;
@@ -31,6 +32,9 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
 
   const { user } = useAuthStore();
   const { fetchCart } = useCartStore();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -226,7 +230,8 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
               <div className="flex items-baseline gap-3">
                 <span className="text-3xl font-bold">${flashPrice.toFixed(2)}</span>
                 <span className="text-lg line-through opacity-60">
-                  ${Number(product.price).toFixed(2)}
+                  {currencySymbol}
+                  {Number(product.price).toFixed(2)}
                 </span>
                 <span className="rounded-full bg-white/20 px-2 py-0.5 text-sm font-bold">
                   {activeSale.discountType === 'PERCENTAGE'
@@ -237,7 +242,8 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
             </div>
           ) : (
             <p className="mt-4 text-3xl font-bold text-gray-900">
-              ${Number(product.price).toFixed(2)}
+              {currencySymbol}
+              {Number(product.price).toFixed(2)}
             </p>
           )}
 
@@ -345,9 +351,11 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
 
           {selectedVariant?.price && (
             <p className="mt-3 text-3xl font-bold text-gray-900">
-              ${Number(selectedVariant.price).toFixed(2)}
+              {currencySymbol}
+              {Number(selectedVariant.price).toFixed(2)}
               <span className="ml-2 text-lg text-gray-400 line-through">
-                ${Number(product?.price).toFixed(2)}
+                {currencySymbol}
+                {Number(product?.price).toFixed(2)}
               </span>
             </p>
           )}

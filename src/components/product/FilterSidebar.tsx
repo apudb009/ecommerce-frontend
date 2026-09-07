@@ -4,26 +4,13 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { Star, X, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface Filters {
   priceRange: { min: number; max: number };
   variants: Record<string, { values: string[]; colors: string[] }>;
   categories: { id: number; name: string; slug: string; count: number }[];
 }
-
-// interface ActiveFilters {
-//   search?: string;
-//   categoryId?: string;
-//   minPrice?: string;
-//   maxPrice?: string;
-//   inStock?: string;
-//   minRating?: string;
-//   variantName?: string;
-//   variantValues?: string;
-//   colors?: string;
-//   sortBy?: string;
-//   sortOrder?: string;
-// }
 
 function FilterSection({
   title,
@@ -57,6 +44,9 @@ function FilterSection({
 export default function FilterSidebar({ onCloseAction }: { onCloseAction?: () => void }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   const [filters, setFilters] = useState<Filters | null>(null);
   const [loading, setLoading] = useState(true);
@@ -245,7 +235,7 @@ export default function FilterSidebar({ onCloseAction }: { onCloseAction?: () =>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <div className="flex-1">
-                <label className="mb-1 block text-xs text-gray-500">Min ($)</label>
+                <label className="mb-1 block text-xs text-gray-500">Min ({currencySymbol})</label>
                 <input
                   type="number"
                   value={minPrice}
@@ -257,7 +247,7 @@ export default function FilterSidebar({ onCloseAction }: { onCloseAction?: () =>
               </div>
               <span className="mt-4 text-gray-400">—</span>
               <div className="flex-1">
-                <label className="mb-1 block text-xs text-gray-500">Max ($)</label>
+                <label className="mb-1 block text-xs text-gray-500">Max ({currencySymbol})</label>
                 <input
                   type="number"
                   value={maxPrice}
@@ -272,10 +262,10 @@ export default function FilterSidebar({ onCloseAction }: { onCloseAction?: () =>
             {/* quick price presets */}
             <div className="flex flex-wrap gap-1.5">
               {[
-                { label: 'Under $25', min: '', max: '25' },
-                { label: '$25–$50', min: '25', max: '50' },
-                { label: '$50–$100', min: '50', max: '100' },
-                { label: 'Over $100', min: '100', max: '' },
+                { label: `Under ${currencySymbol}25`, min: '', max: '25' },
+                { label: `${currencySymbol}25–${currencySymbol}50`, min: '25', max: '50' },
+                { label: `${currencySymbol}50–${currencySymbol}100`, min: '50', max: '100' },
+                { label: `Over ${currencySymbol}100`, min: '100', max: '' },
               ].map((preset) => (
                 <button
                   key={preset.label}

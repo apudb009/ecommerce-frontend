@@ -11,6 +11,7 @@ import { ShoppingBag } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
 import RestrictedAccess from '@/components/admin/RestrictedAccess';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   PENDING: 'bg-yellow-100 text-yellow-700',
@@ -53,6 +54,9 @@ export default function AdminOrdersClient() {
   });
 
   const { permissions } = useAuthStore();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   return (
     <div>
@@ -168,7 +172,8 @@ export default function AdminOrdersClient() {
                         </p>
                       </td>
                       <td className="px-4 py-3 font-semibold text-gray-900">
-                        ${Number(order.grandTotalAmount).toFixed(2)}
+                        {currencySymbol}
+                        {Number(order.grandTotalAmount).toFixed(2)}
                       </td>
                       <td className="px-4 py-3">
                         <span

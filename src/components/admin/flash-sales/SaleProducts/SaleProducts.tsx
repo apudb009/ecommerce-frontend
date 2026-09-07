@@ -1,5 +1,6 @@
 import api from '@/lib/api';
 import { FlashSale, Product } from '@/lib/types';
+import { useSettingsStore } from '@/store/settingsStore';
 import { Plus } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -17,6 +18,9 @@ function AddProductsToSale({ saleId, existingProductIds, onAdded }: Props) {
   const [results, setResults] = useState<Product[]>([]);
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   const handleSearch = async (q: string) => {
     setSearch(q);
@@ -88,7 +92,10 @@ function AddProductsToSale({ saleId, existingProductIds, onAdded }: Props) {
                   )}
                   <div>
                     <p className="font-medium text-gray-900">{p.name}</p>
-                    <p className="text-xs text-gray-400">${Number(p.price).toFixed(2)}</p>
+                    <p className="text-xs text-gray-400">
+                      {currencySymbol}
+                      {Number(p.price).toFixed(2)}
+                    </p>
                   </div>
                 </button>
               ))}

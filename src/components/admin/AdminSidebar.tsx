@@ -33,17 +33,17 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Categories', href: '/admin/categories', icon: FolderTree, module: 'categories' },
   { label: 'Orders', href: '/admin/orders', icon: ShoppingBag, module: 'orders' },
   { label: 'Coupons', href: '/admin/coupons', icon: Tag, module: 'coupons' },
-  { label: 'Invoices', href: '/admin/invoices', icon: FileText, module: 'invoices' },
-  { label: 'Users', href: '/admin/users', icon: Users, module: 'users' },
+  { label: 'Flash Sales', href: '/admin/flash-sales', icon: Zap, module: 'flash-sales' },
   { label: 'Newsletters', href: '/admin/newsletters', icon: Mail, module: 'newsletters' },
   { label: 'Notifications', href: '/admin/notifications', icon: Bell, module: 'notifications' },
+  { label: 'Invoices', href: '/admin/invoices', icon: FileText, module: 'invoices' },
   { label: 'Taxes', href: '/admin/taxes', icon: Percent, module: 'taxes' },
   { label: 'Shipping', href: '/admin/shipping', icon: Truck, module: 'shipping' },
   { label: 'Returns', href: '/admin/returns', icon: RotateCcw, module: 'returns' },
   { label: 'Scheduler', href: '/admin/scheduler', icon: Clock, module: 'scheduler' },
-  { label: 'Settings', href: '/admin/settings', icon: Settings, module: 'settings' },
-  { label: 'Flash Sales', href: '/admin/flash-sales', icon: Zap, module: 'flash-sales' },
+  { label: 'Users', href: '/admin/users', icon: Users, module: 'users' },
   { label: 'Roles', href: '/admin/roles', icon: Shield, module: 'roles' },
+  { label: 'Settings', href: '/admin/settings', icon: Settings, module: 'settings' },
 ];
 
 export default function AdminSidebar() {

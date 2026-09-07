@@ -1,4 +1,5 @@
 import { CouponResult } from '@/lib/types';
+import { useSettingsStore } from '@/store/settingsStore';
 import { Tag, X } from 'lucide-react';
 import { ChangeEvent, FC } from 'react';
 
@@ -21,6 +22,9 @@ const Coupon: FC<Props> = ({
   handleApplyCoupon,
   onChangeCouponCode,
 }) => {
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   {
     /* ── COUPON ────────────────────────────────── */
   }
@@ -41,8 +45,12 @@ const Coupon: FC<Props> = ({
             <p className="text-xs text-green-600">
               {couponResult.coupon.type === 'PERCENTAGE'
                 ? `${couponResult.coupon.value}% off`
-                : `$${Number(couponResult.coupon.value).toFixed(2)} off`}{' '}
-              — saving <strong>${discount.toFixed(2)}</strong>
+                : `${currencySymbol}${Number(couponResult.coupon.value).toFixed(2)} off`}{' '}
+              — saving{' '}
+              <strong>
+                {currencySymbol}
+                {discount.toFixed(2)}
+              </strong>
             </p>
           </div>
           <button

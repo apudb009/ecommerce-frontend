@@ -1,7 +1,8 @@
 import ImageUpload from '@/components/ui/ImageUpload';
 import api from '@/lib/api';
 import { Product, ProductVariant as Variant } from '@/lib/types';
-import { FC, useState } from 'react';
+import { useSettingsStore } from '@/store/settingsStore';
+import { FC } from 'react';
 import { toast } from 'sonner';
 
 export type VariantFormState = {
@@ -38,6 +39,9 @@ const ProductVariantForm: FC<Props> = ({
   onVariantImagesChange,
 }) => {
   //const [variantImages, setVariantImages] = useState<string[]>([]);
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const generateSku = async (): Promise<string> => {
     const response = await api.post('/products/variants/getSku', {
       productName,
@@ -213,7 +217,10 @@ const ProductVariantForm: FC<Props> = ({
           )}
           <span className="font-medium text-gray-700">{variantFormData.value}</span>
           {variantFormData.price && (
-            <span className="text-blue-600">${Number(variantFormData.price).toFixed(2)}</span>
+            <span className="text-blue-600">
+              {currencySymbol}
+              {Number(variantFormData.price).toFixed(2)}
+            </span>
           )}
           <span className="text-gray-400">Stock: {variantFormData.stock}</span>
         </div>

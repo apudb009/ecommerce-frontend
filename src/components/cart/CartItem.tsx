@@ -9,9 +9,13 @@ import { toast } from 'sonner';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import Image from 'next/image';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function CartItem({ item }: { item: CartItemType }) {
   const { fetchCart } = useCartStore();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const [updating, setUpdating] = useState(false);
   const [quantity, setQuantity] = useState(item.quantity);
 
@@ -125,18 +129,26 @@ export default function CartItem({ item }: { item: CartItemType }) {
           {/* price */}
           <div className="text-right">
             <p className="text-sm font-semibold text-gray-900">
-              ${(item.effectivePrice * quantity).toFixed(2)}
+              {currencySymbol}
+              {(item.effectivePrice * quantity).toFixed(2)}
             </p>
             {item.isOnFlashSale ? (
               <p className="text-xs text-gray-400 line-through">
-                ${(item.originalPrice * quantity).toFixed(2)}
+                {currencySymbol}
+                {(item.originalPrice * quantity).toFixed(2)}
               </p>
             ) : (
-              <p className="text-xs text-gray-400">${item.effectivePrice.toFixed(2)} each</p>
+              <p className="text-xs text-gray-400">
+                {currencySymbol}
+                {item.effectivePrice.toFixed(2)} each
+              </p>
             )}
             {/* savings */}
             {item.isOnFlashSale && item.savings > 0 && (
-              <p className="text-xs font-medium text-green-600">Save ${item.savings.toFixed(2)}</p>
+              <p className="text-xs font-medium text-green-600">
+                Save {currencySymbol}
+                {item.savings.toFixed(2)}
+              </p>
             )}
           </div>
         </div>

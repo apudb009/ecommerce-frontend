@@ -10,9 +10,13 @@ import DeleteModal from '@/components/ui/DeleteModal';
 import { Tax } from '@/lib/types';
 import TaxModal from './modal';
 import ActiveTax from './Active';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function AdminTaxesPage() {
   const { permissions } = useAuthStore();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const [taxes, setTaxes] = useState<Tax[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -126,7 +130,9 @@ export default function AdminTaxesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 font-semibold text-gray-900">
-                    {tax.type === 'PERCENTAGE' ? `${tax.rate}%` : `$${Number(tax.rate).toFixed(2)}`}
+                    {tax.type === 'PERCENTAGE'
+                      ? `${tax.rate}%`
+                      : `${currencySymbol}${Number(tax.rate).toFixed(2)}`}
                   </td>
                   <td className="px-4 py-3">
                     {tax.isActive ? (

@@ -142,6 +142,7 @@ export interface Order {
   status: OrderStatus;
   totalAmount: string;
   taxAmount: string;
+  shippingAmount: string;
   grandTotalAmount: string;
   notes: string | null;
   createdAt: string;

@@ -15,6 +15,7 @@ import OrderItem from './OrderItem';
 import PaymentInfo from './PaymentInfo';
 import Actions from './Actions';
 import ReturnModal from './Modal/ReturnModal';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   PENDING: 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -39,6 +40,9 @@ const STATUS_ORDER: Record<OrderStatus, number> = {
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const orderId = Number(params.id);
 
   const [order, setOrder] = useState<Order | null>(null);
@@ -190,7 +194,7 @@ export default function OrderDetailPage() {
 
         <div className="space-y-3">
           {order.items.map((item) => (
-            <OrderItem key={item.id} item={item} />
+            <OrderItem key={item.id} item={item} currencySymbol={currencySymbol} />
           ))}
         </div>
 
@@ -198,11 +202,18 @@ export default function OrderDetailPage() {
         <div className="mt-4 space-y-1 border-t pt-4 text-sm">
           <div className="flex justify-between text-gray-500">
             <span>Subtotal</span>
-            <span>${Number(order.totalAmount).toFixed(2)}</span>
+            <span>
+              {currencySymbol}
+              {Number(order.totalAmount).toFixed(2)}
+            </span>
           </div>
           <div className="flex justify-between text-gray-500">
             <span>Shipping</span>
-            <span>{Number(order.totalAmount) > 50 ? 'Free' : '$9.99'}</span>
+            <span>
+              {Number(order.shippingAmount) === 0
+                ? 'Free'
+                : `${currencySymbol}${Number(order.shippingAmount).toFixed(2)}`}
+            </span>
           </div>
           <div className="flex justify-between text-gray-500">
             <span>Tax</span>
@@ -210,7 +221,10 @@ export default function OrderDetailPage() {
           </div>
           <div className="flex justify-between font-bold text-gray-900 text-base pt-1">
             <span>Total</span>
-            <span>${Number(order.grandTotalAmount).toFixed(2)}</span>
+            <span>
+              {currencySymbol}
+              {Number(order.grandTotalAmount).toFixed(2)}
+            </span>
           </div>
         </div>
       </div>
@@ -231,7 +245,7 @@ export default function OrderDetailPage() {
       </div>
 
       {/* ── PAYMENT INFO ──────────────────────────────────── */}
-      {order.payment && <PaymentInfo payment={order.payment} />}
+      {order.payment && <PaymentInfo payment={order.payment} currencySymbol={currencySymbol} />}
 
       {/* ── NOTES ─────────────────────────────────────────── */}
       {order.notes && (

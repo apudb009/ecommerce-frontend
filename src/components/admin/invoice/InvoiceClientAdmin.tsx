@@ -13,6 +13,7 @@ import AdminSearch from '@/components/admin/table/AdminSearch';
 import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
 import RestrictedAccess from '@/components/admin/RestrictedAccess';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const STATUS_COLORS = {
   PAID: 'bg-green-100 text-green-700',
@@ -43,6 +44,9 @@ export default function AdminInvoicesPage() {
   });
 
   const { permissions } = useAuthStore();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   const [downloading, setDownloading] = useState<number | null>(null);
 
@@ -176,7 +180,8 @@ export default function AdminInvoicesPage() {
                         {format(new Date(invoice.issuedAt), 'MMM d, yyyy')}
                       </td>
                       <td className="px-4 py-3 font-medium text-gray-900">
-                        ${Number(invoice.order?.grandTotalAmount).toFixed(2)}
+                        {currencySymbol}
+                        {Number(invoice.order?.grandTotalAmount).toFixed(2)}
                       </td>
                       <td className="px-4 py-3">
                         <select

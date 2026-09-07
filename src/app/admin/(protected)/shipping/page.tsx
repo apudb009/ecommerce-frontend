@@ -10,9 +10,13 @@ import { hasPermission } from '@/helpers/checkPermission';
 import RestrictedAccess from '@/components/admin/RestrictedAccess';
 import DeleteModal from '@/components/ui/DeleteModal';
 import ShippingModal from './modal';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function AdminShippingPage() {
   const { permissions } = useAuthStore();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const [methods, setMethods] = useState<Shipping[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -102,7 +106,7 @@ export default function AdminShippingPage() {
                 <p className="text-xs text-green-600">
                   {Number(activeMethod.price) === 0
                     ? 'Free shipping'
-                    : `$${Number(activeMethod.price).toFixed(2)} per order`}
+                    : `${currencySymbol}${Number(activeMethod.price).toFixed(2)} per order`}
                 </p>
               </div>
             </div>
@@ -151,7 +155,7 @@ export default function AdminShippingPage() {
                         {Number(method.price) === 0 ? (
                           <span className="text-green-600">Free</span>
                         ) : (
-                          `$${Number(method.price).toFixed(2)}`
+                          `${currencySymbol}${Number(method.price).toFixed(2)}`
                         )}
                       </td>
                       <td className="px-4 py-3">

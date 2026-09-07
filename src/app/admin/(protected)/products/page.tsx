@@ -16,6 +16,7 @@ import RestrictedAccess from '@/components/admin/RestrictedAccess';
 import { useState } from 'react';
 import DeleteModal from '@/components/ui/DeleteModal';
 import Image from 'next/image';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const STATUS_OPTIONS = [
   {
@@ -53,6 +54,9 @@ export default function AdminProductsPage() {
   });
 
   const { permissions } = useAuthStore();
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const [activeProduct, setActiveProduct] = useState<Product>();
 
   const handleDelete = async (id: number) => {
@@ -175,7 +179,8 @@ export default function AdminProductsPage() {
                         </td>
                         <td className="px-4 py-3 text-gray-500">{product.category?.name}</td>
                         <td className="px-4 py-3 font-medium text-gray-900">
-                          ${Number(product.price).toFixed(2)}
+                          {currencySymbol}
+                          {Number(product.price).toFixed(2)}
                         </td>
                         <td className="px-4 py-3">
                           <span className={product.stock === 0 ? 'text-red-600' : 'text-gray-600'}>

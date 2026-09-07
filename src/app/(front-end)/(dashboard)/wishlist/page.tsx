@@ -8,8 +8,12 @@ import { toast } from 'sonner';
 import { Heart, ShoppingCart, Trash2 } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import Image from 'next/image';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function WishlistPage() {
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
   const { fetchCart } = useCartStore();
   const [items, setItems] = useState<{ id: number; product: Product }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,7 +108,8 @@ export default function WishlistPage() {
                   </h3>
                 </Link>
                 <p className="mt-1 text-lg font-bold text-gray-900">
-                  ${Number(product.price).toFixed(2)}
+                  {currencySymbol}
+                  {Number(product.price).toFixed(2)}
                 </p>
 
                 <div className="mt-auto flex gap-2 pt-3">

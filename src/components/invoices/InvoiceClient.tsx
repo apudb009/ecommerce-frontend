@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { FileText, Download } from 'lucide-react';
 import { useTable } from '@/hooks/useTable';
 import CommonPagination from '@/components/common/table/Pagination';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const STATUS_COLORS = {
   PAID: 'bg-green-100 text-green-700',
@@ -31,6 +32,10 @@ export default function InvoicesPage() {
     endpoint: '/invoices',
     defaultSort: 'issuedAt',
   });
+
+  const {
+    settings: { currency_symbol: currencySymbol },
+  } = useSettingsStore();
 
   const [downloading, setDownloading] = useState<number | null>(null);
 
@@ -101,7 +106,8 @@ export default function InvoicesPage() {
                     {format(new Date(invoice.issuedAt), 'MMM d, yyyy')}
                   </td>
                   <td className="px-4 py-3 font-medium text-gray-900">
-                    ${Number(invoice.order.grandTotalAmount).toFixed(2)}
+                    {currencySymbol}
+                    {Number(invoice.order.grandTotalAmount).toFixed(2)}
                   </td>
                   <td className="px-4 py-3">
                     <span

@@ -22,6 +22,8 @@ export default function ProductCard({ product, index }: { product: Product; inde
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [flashPrice, setFlashPrice] = useState<number | null>(null);
 
+  const currencySymbol = settings.currency_symbol;
+
   const productImage = product?.images?.find((image) => image.isMain);
 
   useEffect(() => {
@@ -183,14 +185,19 @@ export default function ProductCard({ product, index }: { product: Product; inde
           <div>
             {flashPrice !== null ? (
               <div>
-                <span className="text-lg font-bold text-red-600">${flashPrice.toFixed(2)}</span>
+                <span className="text-lg font-bold text-red-600">
+                  {currencySymbol}
+                  {flashPrice.toFixed(2)}
+                </span>
                 <span className="ml-1 text-sm text-gray-400 line-through">
-                  ${Number(product.price).toFixed(2)}
+                  {currencySymbol}
+                  {Number(product.price).toFixed(2)}
                 </span>
               </div>
             ) : (
               <span className="text-lg font-bold text-gray-900">
-                ${Number(product.price).toFixed(2)}
+                {currencySymbol}
+                {Number(product.price).toFixed(2)}
               </span>
             )}
           </div>
