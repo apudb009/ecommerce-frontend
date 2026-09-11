@@ -4,12 +4,17 @@ import { Role } from '@/lib/types';
 import { Shield } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { FieldErrors, required, stringLength, pattern, compact } from '@/lib/validators';
 
 type Props = {
   role: Role | null;
   onClose: () => void;
   onSaved: (role: Role) => void;
 };
+
+type Errors = FieldErrors<'name' | 'permissions'>;
+
+const ROLE_NAME_PATTERN = /^[A-Z0-9_]+$/;
 
 // ── ROLE MODAL ─────────────────────────────────────
 function RoleModal({ role, onClose, onSaved }: Props) {
@@ -23,6 +28,11 @@ function RoleModal({ role, onClose, onSaved }: Props) {
     ),
   );
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
+
+  const clearError = (field: keyof Errors) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
 
   const toggle = (module: string, action: string) => {
     const key = `${module}:${action}`;
@@ -32,6 +42,7 @@ function RoleModal({ role, onClose, onSaved }: Props) {
       else next.add(key);
       return next;
     });
+    clearError('permissions');
   };
 
   const toggleModule = (module: string) => {
@@ -44,21 +55,41 @@ function RoleModal({ role, onClose, onSaved }: Props) {
       });
       return next;
     });
+    clearError('permissions');
   };
 
   const selectAll = () => {
     const all = new Set(MODULES.flatMap((m) => ACTIONS.map((a) => `${m}:${a}`)));
     setSelected(all);
+    clearError('permissions');
   };
 
   const clearAll = () => setSelected(new Set());
 
+  const validate = (): Errors => {
+    return compact({
+      name:
+        required(name, 'Role name') ||
+        stringLength(name, 'Role name', { min: 2, max: 40 }) ||
+        pattern(
+          name,
+          'Role name',
+          ROLE_NAME_PATTERN,
+          'uppercase letters, numbers, and underscores only',
+        ),
+      permissions: selected.size === 0 ? 'Select at least one permission' : undefined,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      toast.error('Role name is required');
+
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) {
       return;
     }
+
     setLoading(true);
 
     const perms = Array.from(selected).map((key) => {
@@ -67,9 +98,14 @@ function RoleModal({ role, onClose, onSaved }: Props) {
     });
 
     try {
+      const payload = {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        permissions: perms,
+      };
       const { data } = isEdit
-        ? await api.patch(`/roles/${role.id}`, { name, description, permissions: perms })
-        : await api.post('/roles', { name, description, permissions: perms });
+        ? await api.patch(`/roles/${role.id}`, payload)
+        : await api.post('/roles', payload);
       toast.success(isEdit ? 'Role updated' : 'Role created');
       onSaved(data);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -104,11 +140,19 @@ function RoleModal({ role, onClose, onSaved }: Props) {
               <label className="mb-1 block text-sm font-medium text-gray-700">Role Name *</label>
               <input
                 value={name}
-                onChange={(e) => setName(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  setName(e.target.value.toUpperCase());
+                  clearError('name');
+                }}
                 placeholder="MANAGER"
                 disabled={role?.isSystem}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm uppercase focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-50 disabled:text-gray-400"
+                className={`w-full rounded-lg border px-3 py-2 font-mono text-sm uppercase focus:outline-none focus:ring-2 disabled:bg-gray-50 disabled:text-gray-400 ${
+                  errors.name
+                    ? 'border-red-400 focus:ring-red-400'
+                    : 'border-gray-300 focus:ring-purple-500'
+                }`}
               />
+              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Description</label>
@@ -149,6 +193,10 @@ function RoleModal({ role, onClose, onSaved }: Props) {
               </div>
             </div>
 
+            {errors.permissions && (
+              <p className="mb-2 text-xs text-red-500">{errors.permissions}</p>
+            )}
+
             {/* legend */}
             <div className="mb-3 flex items-center gap-3 text-xs text-gray-400">
               {ACTIONS.map((a) => (
@@ -159,7 +207,11 @@ function RoleModal({ role, onClose, onSaved }: Props) {
             </div>
 
             {/* matrix table */}
-            <div className="overflow-hidden rounded-lg border">
+            <div
+              className={`overflow-hidden rounded-lg border ${
+                errors.permissions ? 'border-red-300' : ''
+              }`}
+            >
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>

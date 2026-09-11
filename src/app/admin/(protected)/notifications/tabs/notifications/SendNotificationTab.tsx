@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { QUICK_TEMPLATES } from './constant';
 import Preview from './preview';
+import { FieldErrors, required, compact } from '@/lib/validators';
 
 export type Target = 'all' | 'user';
 
@@ -21,6 +22,8 @@ type Props = {
   permissions: UserPermission[];
 };
 
+type Errors = FieldErrors<'title' | 'message'>;
+
 // ── SEND NOTIFICATION TAB ───────────────────────────
 function SendNotificationTab({ permissions }: Props) {
   const [form, setForm] = useState<FormProps>({
@@ -30,10 +33,22 @@ function SendNotificationTab({ permissions }: Props) {
     target: 'all', // 'all' | 'userId'
     query: '',
   });
+  const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(false);
   const [userInfo, setUserInfo] = useState<User | null>(null);
   const [searching, setSearching] = useState(false);
+
+  const clearError = (field: keyof Errors) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const validate = (): Errors => {
+    return compact({
+      title: required(form.title, 'Title'),
+      message: required(form.message, 'Message'),
+    });
+  };
 
   const isPermitted = (type: 'create' | 'update' | 'delete' | 'read') => {
     return hasPermission(permissions, 'notifications', type);
@@ -56,8 +71,9 @@ function SendNotificationTab({ permissions }: Props) {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.message.trim()) {
-      toast.error('Title and message are required');
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) {
       return;
     }
 
@@ -98,6 +114,11 @@ function SendNotificationTab({ permissions }: Props) {
       setLoading(false);
     }
   };
+
+  const errorClass = (field: keyof Errors, extra = '') =>
+    `w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${extra} ${
+      errors[field] ? 'border-red-400 focus:ring-red-400' : 'border-gray-300 focus:ring-blue-500'
+    }`;
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -207,23 +228,29 @@ function SendNotificationTab({ permissions }: Props) {
               <label className="mb-1 block text-xs font-medium text-gray-500">Title</label>
               <input
                 value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, title: e.target.value });
+                  clearError('title');
+                }}
                 placeholder="e.g. Big Sale This Weekend!"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
+                className={errorClass('title')}
               />
+              {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title}</p>}
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-500">Message</label>
               <textarea
                 value={form.message}
-                onChange={(e) => setForm({ ...form, message: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, message: e.target.value });
+                  clearError('message');
+                }}
                 placeholder="e.g. Get up to 50% off on selected products."
                 rows={3}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
+                className={errorClass('message')}
               />
+              {errors.message && <p className="mt-1 text-xs text-red-500">{errors.message}</p>}
             </div>
 
             <div>

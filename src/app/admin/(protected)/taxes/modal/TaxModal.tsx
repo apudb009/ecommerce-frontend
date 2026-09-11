@@ -3,12 +3,23 @@ import { Tax, TaxType } from '@/lib/types';
 import { useSettingsStore } from '@/store/settingsStore';
 import { FC, useState } from 'react';
 import { toast } from 'sonner';
+import {
+  FieldErrors,
+  required,
+  //stringLength,
+  positiveNumber,
+  //dateTimeRangeValid,
+  //HEX_COLOR_PATTERN,
+  compact,
+} from '@/lib/validators';
 
 type Props = {
   tax: Tax | null;
   onClose: () => void;
   onSaved: (tax: Tax) => void;
 };
+
+type Errors = FieldErrors<'name' | 'rate'>;
 
 // ── TAX MODAL ───────────────────────────────────────
 const TaxModal: FC<Props> = ({ tax, onClose, onSaved }) => {
@@ -20,12 +31,31 @@ const TaxModal: FC<Props> = ({ tax, onClose, onSaved }) => {
     isActive: tax?.isActive ?? false,
   });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
   const {
     settings: { currency_symbol: currencySymbol },
   } = useSettingsStore();
 
+  const clearError = (field: keyof Errors) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const validate = (): Errors => {
+    return compact({
+      name: required(form.name, 'Name'),
+      rate: required(form.rate, 'Rate') && positiveNumber(form.rate, 'Rate'),
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
     setLoading(true);
 
     const payload = {
@@ -49,6 +79,11 @@ const TaxModal: FC<Props> = ({ tax, onClose, onSaved }) => {
     }
   };
 
+  const errorClass = (field: keyof Errors, extra = '') =>
+    `w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${extra} ${
+      errors[field] ? 'border-red-400 focus:ring-red-400' : 'border-gray-300 focus:ring-blue-500'
+    }`;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
@@ -68,11 +103,15 @@ const TaxModal: FC<Props> = ({ tax, onClose, onSaved }) => {
             <label className="mb-1 block text-sm font-medium text-gray-700">Name</label>
             <input
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, name: e.target.value });
+                clearError('name');
+              }}
+              type="text"
               placeholder="e.g. VAT, Sales Tax"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className={errorClass('name')}
             />
+            {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
           </div>
 
           {/* type + rate */}
@@ -95,13 +134,16 @@ const TaxModal: FC<Props> = ({ tax, onClose, onSaved }) => {
               <input
                 type="number"
                 value={form.rate}
-                onChange={(e) => setForm({ ...form, rate: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, rate: e.target.value });
+                  clearError('rate');
+                }}
                 placeholder={form.type === 'PERCENTAGE' ? '8' : '5.00'}
                 min="0"
                 step="0.01"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
+                className={errorClass('rate')}
               />
+              {errors.rate && <p className="mt-1 text-xs text-red-600">{errors.rate}</p>}
             </div>
           </div>
 

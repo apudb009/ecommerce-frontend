@@ -3,12 +3,15 @@ import { Shipping } from '@/lib/types';
 import { useSettingsStore } from '@/store/settingsStore';
 import { FC, useState } from 'react';
 import { toast } from 'sonner';
+import { FieldErrors, required, positiveNumber, compact } from '@/lib/validators';
 
 type Props = {
   method: Shipping | null;
   onClose: () => void;
   onSaved: (method: Shipping) => void;
 };
+
+type Errors = FieldErrors<'name' | 'price'>;
 
 // ── SHIPPING MODAL ──────────────────────────────────
 const ShippingModal: FC<Props> = ({ method, onClose, onSaved }) => {
@@ -22,9 +25,28 @@ const ShippingModal: FC<Props> = ({ method, onClose, onSaved }) => {
     isActive: method?.isActive ?? true,
   });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
+
+  const clearError = (field: keyof Errors) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const validate = (): Errors => {
+    return compact({
+      name: required(form.name, 'Name'),
+      price: required(form.price, 'Price') && positiveNumber(form.price, 'Price'),
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
     setLoading(true);
 
     const payload = {
@@ -47,6 +69,11 @@ const ShippingModal: FC<Props> = ({ method, onClose, onSaved }) => {
     }
   };
 
+  const errorClass = (field: keyof Errors, extra = '') =>
+    `w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${extra} ${
+      errors[field] ? 'border-red-400 focus:ring-red-400' : 'border-gray-300 focus:ring-blue-500'
+    }`;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
@@ -66,11 +93,14 @@ const ShippingModal: FC<Props> = ({ method, onClose, onSaved }) => {
             <label className="mb-1 block text-sm font-medium text-gray-700">Name</label>
             <input
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, name: e.target.value });
+                clearError('name');
+              }}
               placeholder="e.g. Standard Shipping, Express, Free Shipping"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className={errorClass('name')}
             />
+            {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
           </div>
 
           {/* price */}
@@ -81,13 +111,16 @@ const ShippingModal: FC<Props> = ({ method, onClose, onSaved }) => {
             <input
               type="number"
               value={form.price}
-              onChange={(e) => setForm({ ...form, price: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, price: e.target.value });
+                clearError('price');
+              }}
               placeholder="0.00"
               min="0"
               step="0.01"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+              className={errorClass('price')}
             />
+            {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price}</p>}
             {Number(form.price) === 0 && (
               <p className="mt-1 text-xs text-green-600">✅ This will be shown as Free Shipping</p>
             )}

@@ -4,6 +4,17 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { Zap } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+  FieldErrors,
+  required,
+  stringLength,
+  positiveNumber,
+  dateTimeRangeValid,
+  HEX_COLOR_PATTERN,
+  compact,
+} from '@/lib/validators';
+
+type Errors = FieldErrors<'name' | 'discountValue' | 'startTime' | 'endTime' | 'bannerColor'>;
 
 // ── FLASH SALE MODAL ───────────────────────────────
 function FlashSaleModal({
@@ -36,13 +47,47 @@ function FlashSaleModal({
     bannerColor: sale?.bannerColor || '#ef4444',
   });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
+
+  const clearError = (field: keyof Errors) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const validate = (): Errors => {
+    const range = dateTimeRangeValid(form.startTime, form.endTime, {
+      start: 'Start time',
+      end: 'End time',
+    });
+
+    return compact({
+      name: required(form.name, 'Sale name') || stringLength(form.name, 'Sale name', { max: 80 }),
+      discountValue: positiveNumber(form.discountValue, 'Value', {
+        max: form.discountType === 'PERCENTAGE' ? 100 : undefined,
+      }),
+      startTime: range.start,
+      endTime: range.end,
+      bannerColor:
+        form.bannerColor.trim() && !HEX_COLOR_PATTERN.test(form.bannerColor.trim())
+          ? 'Enter a valid hex color (e.g. #ef4444)'
+          : undefined,
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
     setLoading(true);
 
     const payload = {
       ...form,
+      name: form.name.trim(),
+      description: form.description.trim() || undefined,
       discountValue: Number(form.discountValue),
     };
 
@@ -60,6 +105,11 @@ function FlashSaleModal({
     }
   };
 
+  const errorClass = (field: keyof Errors, extra = '') =>
+    `w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${extra} ${
+      errors[field] ? 'border-red-400 focus:ring-red-400' : 'border-gray-300 focus:ring-orange-500'
+    }`;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -74,16 +124,19 @@ function FlashSaleModal({
           {isEdit ? 'Edit Flash Sale' : 'New Flash Sale'}
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Sale Name</label>
             <input
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, name: e.target.value });
+                clearError('name');
+              }}
               placeholder="e.g. Weekend Flash Sale"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-              required
+              className={errorClass('name')}
             />
+            {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
           </div>
 
           <div>
@@ -101,7 +154,10 @@ function FlashSaleModal({
               <label className="mb-1 block text-sm font-medium text-gray-700">Discount Type</label>
               <select
                 value={form.discountType}
-                onChange={(e) => setForm({ ...form, discountType: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, discountType: e.target.value });
+                  clearError('discountValue');
+                }}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="PERCENTAGE">Percentage (%)</option>
@@ -115,13 +171,18 @@ function FlashSaleModal({
               <input
                 type="number"
                 value={form.discountValue}
-                onChange={(e) => setForm({ ...form, discountValue: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, discountValue: e.target.value });
+                  clearError('discountValue');
+                }}
                 min="0.01"
                 step="0.01"
                 placeholder={form.discountType === 'PERCENTAGE' ? '20' : '10'}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                required
+                className={errorClass('discountValue')}
               />
+              {errors.discountValue && (
+                <p className="mt-1 text-xs text-red-500">{errors.discountValue}</p>
+              )}
             </div>
           </div>
 
@@ -131,20 +192,27 @@ function FlashSaleModal({
               <input
                 type="datetime-local"
                 value={form.startTime}
-                onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                required
+                onChange={(e) => {
+                  setForm({ ...form, startTime: e.target.value });
+                  clearError('startTime');
+                  clearError('endTime');
+                }}
+                className={errorClass('startTime')}
               />
+              {errors.startTime && <p className="mt-1 text-xs text-red-500">{errors.startTime}</p>}
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">End Time</label>
               <input
                 type="datetime-local"
                 value={form.endTime}
-                onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                required
+                onChange={(e) => {
+                  setForm({ ...form, endTime: e.target.value });
+                  clearError('endTime');
+                }}
+                className={errorClass('endTime')}
               />
+              {errors.endTime && <p className="mt-1 text-xs text-red-500">{errors.endTime}</p>}
             </div>
           </div>
 
@@ -153,14 +221,24 @@ function FlashSaleModal({
             <div className="flex gap-2">
               <input
                 type="color"
-                value={form.bannerColor}
-                onChange={(e) => setForm({ ...form, bannerColor: e.target.value })}
+                value={
+                  /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(form.bannerColor)
+                    ? form.bannerColor
+                    : '#ef4444'
+                }
+                onChange={(e) => {
+                  setForm({ ...form, bannerColor: e.target.value });
+                  clearError('bannerColor');
+                }}
                 className="h-9 w-12 cursor-pointer rounded-md border border-gray-300 p-0.5"
               />
               <input
                 value={form.bannerColor}
-                onChange={(e) => setForm({ ...form, bannerColor: e.target.value })}
-                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
+                onChange={(e) => {
+                  setForm({ ...form, bannerColor: e.target.value });
+                  clearError('bannerColor');
+                }}
+                className={errorClass('bannerColor', 'flex-1 font-mono')}
               />
               {/* quick color presets */}
               <div className="flex gap-1">
@@ -168,13 +246,19 @@ function FlashSaleModal({
                   <button
                     key={color}
                     type="button"
-                    onClick={() => setForm({ ...form, bannerColor: color })}
+                    onClick={() => {
+                      setForm({ ...form, bannerColor: color });
+                      clearError('bannerColor');
+                    }}
                     className="h-9 w-9 rounded-md border-2 border-white shadow"
                     style={{ backgroundColor: color }}
                   />
                 ))}
               </div>
             </div>
+            {errors.bannerColor && (
+              <p className="mt-1 text-xs text-red-500">{errors.bannerColor}</p>
+            )}
           </div>
 
           {/* preview */}
