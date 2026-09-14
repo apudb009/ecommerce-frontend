@@ -96,11 +96,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       // Fetch user (page refresh)
       // ─────────────────────────────────────────────
       try {
-        const { data } = await api.get('/user/me');
+        const shouldFetchCart = !pathname.startsWith('/cart') && !pathname.startsWith('/checkout');
+        const [userResponse] = await Promise.all([
+          api.get('/user/me'),
+          shouldFetchCart ? fetchCart() : Promise.resolve(),
+        ]);
+        const { data } = userResponse;
 
         setUser(data);
-
-        await fetchCart();
 
         if (redirectAdmin(data.role)) {
           setLoading(false);
@@ -126,7 +129,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     init();
   }, [pathname, router, user, setUser, logout, fetchCart, isMaitenanceMode, settingsLoading]);
 
-  const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
   const isAuthOnly = AUTH_ONLY_ROUTES.includes(pathname);
 
   useEffect(() => {
@@ -140,7 +142,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
   }, [settingsLoading, isMaitenanceMode, pathname, router]);
 
-  if (loading && (isProtected || isAuthOnly)) {
+  if (loading && isAuthOnly) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />

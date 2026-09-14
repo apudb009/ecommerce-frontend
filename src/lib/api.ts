@@ -18,7 +18,7 @@ export function setTokens(accessToken: string, refreshToken: string) {
   localStorage.setItem(TOKEN_KEY, accessToken);
   localStorage.setItem(REFRESH_KEY, refreshToken);
 
-  // cookies — for middleware (edge runtime)
+  // cookies — for server side fetch
   setCookie(TOKEN_KEY, accessToken, 15 * 60);
   setCookie(REFRESH_KEY, refreshToken, 7 * 24 * 60 * 60);
 }
