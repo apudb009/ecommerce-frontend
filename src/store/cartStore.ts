@@ -5,6 +5,7 @@ import api from '@/lib/api';
 type CartState = {
   cart: Cart | null;
   isLoading: boolean;
+  hasLoaded: boolean;
   fetchCart: () => Promise<void>;
   clearCart: () => void;
 };
@@ -12,6 +13,7 @@ type CartState = {
 export const useCartStore = create<CartState>((set) => ({
   cart: null,
   isLoading: false,
+  hasLoaded: false,
   fetchCart: async () => {
     set({ isLoading: true });
     try {
@@ -20,8 +22,8 @@ export const useCartStore = create<CartState>((set) => ({
     } catch {
       set({ cart: null });
     } finally {
-      set({ isLoading: false });
+      set({ isLoading: false, hasLoaded: true });
     }
   },
-  clearCart: () => set({ cart: null }),
+  clearCart: () => set({ cart: null, hasLoaded: false }),
 }));

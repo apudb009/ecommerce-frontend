@@ -15,7 +15,7 @@ const AUTH_ONLY_ROUTES = ['/login', '/register', '/admin/login'];
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, setUser, logout } = useAuthStore();
-  const { fetchCart } = useCartStore();
+  const { fetchCart, hasLoaded: cartLoaded } = useCartStore();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -77,6 +77,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       // User already exists in Zustand
       // ─────────────────────────────────────────────
       if (user) {
+        const shouldHydrateCart =
+          !cartLoaded && !pathname.startsWith('/cart') && !pathname.startsWith('/checkout');
+
+        if (shouldHydrateCart) {
+          await fetchCart();
+        }
+
         if (redirectAdmin(user.role)) {
           setLoading(false);
           return;
@@ -127,7 +134,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     };
 
     init();
-  }, [pathname, router, user, setUser, logout, fetchCart, isMaitenanceMode, settingsLoading]);
+  }, [
+    pathname,
+    router,
+    user,
+    cartLoaded,
+    setUser,
+    logout,
+    fetchCart,
+    isMaitenanceMode,
+    settingsLoading,
+  ]);
 
   const isAuthOnly = AUTH_ONLY_ROUTES.includes(pathname);
 
