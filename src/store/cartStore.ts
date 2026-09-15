@@ -8,6 +8,7 @@ type CartState = {
   hasLoaded: boolean;
   fetchCart: () => Promise<void>;
   clearCart: () => void;
+  updateCart: (cart: Cart) => void;
 };
 
 export const useCartStore = create<CartState>((set) => ({
@@ -26,4 +27,5 @@ export const useCartStore = create<CartState>((set) => ({
     }
   },
   clearCart: () => set({ cart: null, hasLoaded: false }),
+  updateCart: (cart) => set({ cart }),
 }));

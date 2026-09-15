@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -15,18 +15,22 @@ type Props = {
   cart: Cart;
 };
 
-export default function CartClient({ cart }: Props) {
+export default function CartClient({ cart: initialCart }: Props) {
   const router = useRouter();
-  const { fetchCart } = useCartStore();
+  const { updateCart, cart } = useCartStore();
   const [clearing, setClearing] = useState(false);
+
+  useEffect(() => {
+    updateCart(initialCart);
+  }, [initialCart, updateCart]);
 
   const handleClearCart = async () => {
     if (!confirm('Remove all items from cart?')) return;
 
     setClearing(true);
     try {
-      await api.delete('/cart');
-      await fetchCart();
+      const { data } = await api.delete<Cart>('/cart');
+      updateCart(data);
       toast.success('Cart cleared');
     } catch {
       toast.error('Failed to clear cart');

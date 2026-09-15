@@ -4,6 +4,7 @@ import { FC, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import {
+  Cart,
   FlashSale,
   FlashSaleProduct,
   Product,
@@ -31,7 +32,7 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
   const router = useRouter();
 
   const { user } = useAuthStore();
-  const { fetchCart } = useCartStore();
+  const { updateCart } = useCartStore();
   const {
     settings: { currency_symbol: currencySymbol },
   } = useSettingsStore();
@@ -128,12 +129,12 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
 
     setAddingToCart(true);
     try {
-      await api.post('/cart/items', {
+      const { data } = await api.post<Cart>('/cart/items', {
         productId: product.id,
         quantity,
         variantId: selectedVariant?.id,
       });
-      await fetchCart();
+      updateCart(data);
       toast.success(`${quantity} × ${product.name} added to cart`);
       return true;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

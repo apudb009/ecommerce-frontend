@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { CartItem as CartItemType } from '@/lib/types';
+import { Cart, CartItem as CartItemType } from '@/lib/types';
 import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
 import { Minus, Plus, Trash2 } from 'lucide-react';
@@ -12,7 +12,7 @@ import Image from 'next/image';
 import { useSettingsStore } from '@/store/settingsStore';
 
 export default function CartItem({ item }: { item: CartItemType }) {
-  const { fetchCart } = useCartStore();
+  const { updateCart } = useCartStore();
   const {
     settings: { currency_symbol: currencySymbol },
   } = useSettingsStore();
@@ -25,8 +25,10 @@ export default function CartItem({ item }: { item: CartItemType }) {
     setQuantity(newQty);
     setUpdating(true);
     try {
-      await api.patch(`/cart/items/${item.product.id}`, { quantity: newQty });
-      await fetchCart();
+      const { data } = await api.patch<Cart>(`/cart/items/${item.product.id}`, {
+        quantity: newQty,
+      });
+      updateCart(data);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to update quantity');
@@ -39,8 +41,8 @@ export default function CartItem({ item }: { item: CartItemType }) {
   const handleRemove = async () => {
     setUpdating(true);
     try {
-      await api.delete(`/cart/items/${item.product.id}`);
-      await fetchCart();
+      const { data } = await api.delete<Cart>(`/cart/items/${item.product.id}`);
+      updateCart(data);
       toast.success(`${item.product.name} removed from cart`);
     } catch {
       toast.error('Failed to remove item');
