@@ -1,7 +1,7 @@
 'use client';
-
+import Link from 'next/link';
 import { Banner, Category, FlashSale, Product } from '@/lib/types';
-import { Link, Tag, TrendingUp, Zap } from 'lucide-react';
+import { Tag, TrendingUp, Zap } from 'lucide-react';
 import Image from 'next/image';
 import { FC, Suspense } from 'react';
 import BannerSlider from './BannerSlider';

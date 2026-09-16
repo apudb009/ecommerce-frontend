@@ -12,7 +12,15 @@ import { useEffect, useState } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import Image from 'next/image';
 
-export default function ProductCard({ product, index }: { product: Product; index: number }) {
+export default function ProductCard({
+  product,
+  index,
+  extraClasses,
+}: {
+  product: Product;
+  index: number;
+  extraClasses?: string;
+}) {
   const router = useRouter();
   const { user } = useAuthStore();
   const { settings } = useSettingsStore();
@@ -119,7 +127,7 @@ export default function ProductCard({ product, index }: { product: Product; inde
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-md"
+      className={`${extraClasses ?? ''} group flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-md`}
     >
       {/* ── IMAGE ───────────────────────────────────── */}
       <div className="relative aspect-square bg-gray-100">

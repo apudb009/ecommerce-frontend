@@ -2,16 +2,9 @@
 
 import { useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Product } from '@/lib/types';
-import { ChevronLeft, ChevronRight, Star, ShoppingCart } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
-import { useCartStore } from '@/store/cartStore';
-import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
-import { toast } from 'sonner';
-import { useState } from 'react';
-import { useSettingsStore } from '@/store/settingsStore';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import ProductCard from '../product/ProductCard';
 
 export default function ProductSlider({
   title,
@@ -67,103 +60,15 @@ export default function ProductSlider({
         style={{ scrollbarWidth: 'none' }}
       >
         {products.map((product, index) => (
-          <SliderCard key={product.id} product={product} index={index} />
+          // <SliderCard key={product.id} product={product} index={index} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            index={index}
+            extraClasses="shrink-0 w-48"
+          />
         ))}
       </div>
     </div>
-  );
-}
-
-// ── SLIDER CARD ─────────────────────────────────────
-function SliderCard({ product, index }: { product: Product; index: number }) {
-  const router = useRouter();
-  const { user } = useAuthStore();
-  const { fetchCart } = useCartStore();
-  const [adding, setAdding] = useState(false);
-  const {
-    settings: { currency_symbol: currencySymbol },
-  } = useSettingsStore();
-
-  const productImage = product?.images?.find((image) => image.isMain);
-
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    setAdding(true);
-    try {
-      await api.post('/cart/items', { productId: product.id, quantity: 1 });
-      await fetchCart();
-      toast.success(`${product.name} added to cart`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to add to cart');
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  return (
-    <Link
-      href={`/products/${product.slug}`}
-      className="group w-48 shrink-0 overflow-hidden rounded-lg border bg-white shadow-sm transition hover:shadow-md"
-    >
-      {/* image */}
-      <div className="relative aspect-square bg-gray-100">
-        {productImage?.url ? (
-          <Image
-            src={productImage.url}
-            alt={product.name}
-            className="h-full w-full object-cover transition group-hover:scale-105"
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            priority={index < 4}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <ShoppingCart className="h-8 w-8 text-gray-300" />
-          </div>
-        )}
-        {product.stock === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium">
-              Out of Stock
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* details */}
-      <div className="p-3">
-        <p className="line-clamp-2 text-xs font-medium text-gray-900">{product.name}</p>
-
-        {/* rating */}
-        {product.avgRating && (
-          <div className="mt-1 flex items-center gap-1">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs text-gray-400">{product.avgRating}</span>
-          </div>
-        )}
-
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-sm font-bold text-gray-900">
-            {currencySymbol}
-            {Number(product.price).toFixed(2)}
-          </span>
-          <button
-            onClick={handleAddToCart}
-            disabled={product.stock === 0 || adding}
-            className="rounded-md bg-blue-600 p-1.5 text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            <ShoppingCart className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
-    </Link>
   );
 }

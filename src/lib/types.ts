@@ -523,3 +523,12 @@ export interface StoreSettings {
   meta_title: string;
   meta_description: string;
 }
+
+export interface WishlistItem {
+  product: Product;
+}
+
+export interface Wishlist {
+  id: number;
+  items: WishlistItem[];
+}

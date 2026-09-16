@@ -17,7 +17,7 @@ import { useCartStore } from '@/store/cartStore';
 import { toast } from 'sonner';
 import StarRating from '@/components/ui/StarRating';
 import ReviewSection from '@/components/product/ReviewSection';
-import { ShoppingCart, Minus, Plus, ChevronLeft, Zap } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, ChevronLeft, Zap, Heart } from 'lucide-react';
 import CountdownTimer from '../ui/CountdownTimer';
 import ImageGallery from './Product/ImageGallery';
 import TrustBadges from './Product/TrustBadges';
@@ -55,6 +55,9 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
     product?.images || [],
   );
 
+  const [inWishlist, setInWishlist] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+
   // helper — check if color is light or dark for checkmark contrast
   function isLightColor(hex: string): boolean {
     if (!hex) return true;
@@ -66,6 +69,44 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
   }
 
   useEffect(() => {
+    if (!user) return;
+    api
+      .get(`/wishlist/check/${product.id}`)
+      .then(({ data }) => setInWishlist(data))
+      .catch(() => {});
+  }, [product.id, user]);
+
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      if (inWishlist) {
+        await api.delete(`/wishlist/${product.id}`);
+        setInWishlist(false);
+        toast.success('Removed from wishlist');
+      } else {
+        await api.post(`/wishlist/${product.id}`);
+        setInWishlist(true);
+        toast.success('Added to wishlist');
+      }
+    } catch {
+      toast.error('Failed to update wishlist');
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // const [  ] = await Promise.all([
+
+    // ])
     const fetchProduct = async () => {
       try {
         // fetch variants by product id
@@ -129,6 +170,11 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
 
     setAddingToCart(true);
     try {
+      //Remove from wishlist if already in
+      if (inWishlist) {
+        await api.delete(`/wishlist/${product.id}`);
+        setInWishlist(false);
+      }
       const { data } = await api.post<Cart>('/cart/items', {
         productId: product.id,
         quantity,
@@ -390,6 +436,18 @@ const ProductDetail: FC<Props> = ({ product, slug }) => {
 
           {/* action buttons */}
           <div className="mt-6 flex gap-3">
+            <button
+              onClick={handleToggleWishlist}
+              disabled={wishlistLoading || isOutOfStock}
+              className="flex flex-1 items-center justify-center gap-2 rounded-md border-2 border-blue-600 px-6 py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Heart className="h-4 w-4" />
+              {wishlistLoading
+                ? 'Adding...'
+                : inWishlist
+                  ? 'Remove from Wishlist'
+                  : 'Add to Wishlist'}
+            </button>
             <button
               onClick={handleAddToCart}
               disabled={isOutOfStock || addingToCart}
