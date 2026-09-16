@@ -1,14 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
+import { PaginationMeta } from '@/lib/types';
 
 interface UseTableOptions {
   endpoint: string;
   defaultLimit?: number;
   defaultSort?: string;
   defaultOrder?: 'asc' | 'desc';
+  initialData?: unknown[];
+  initialMeta?: PaginationMeta | null;
+  initialQueryKey?: string;
 }
 
 export function useTable<T>({
@@ -16,20 +20,17 @@ export function useTable<T>({
   defaultLimit = 10,
   defaultSort = 'createdAt',
   defaultOrder = 'desc',
+  initialData,
+  initialMeta = null,
+  initialQueryKey,
 }: UseTableOptions) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [data, setData] = useState<T[]>([]);
-  const [meta, setMeta] = useState<{
-    total: number;
-    page: number;
-    limit: number;
-    lastPage: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<T[]>(() => (initialData as T[] | undefined) ?? []);
+  const [meta, setMeta] = useState<PaginationMeta | null>(initialMeta);
+  const [loading, setLoading] = useState(!initialData);
+  const skippedInitialQuery = useRef<string | null>(null);
 
   // ── read from URL params ───────────────────────────
   const page = Number(searchParams.get('page') || 1);
@@ -74,12 +75,19 @@ export function useTable<T>({
     }
   }, [endpoint, page, limit, search, sort, order, getExtraParams]);
 
+  const queryKey = `${page}|${limit}|${search}|${sort}|${order}|${JSON.stringify(getExtraParams())}`;
+
   useEffect(() => {
+    if (initialQueryKey === queryKey && skippedInitialQuery.current !== queryKey) {
+      skippedInitialQuery.current = queryKey;
+      return;
+    }
+
     const loadData = async () => {
       await fetchData();
     };
     void loadData();
-  }, [fetchData]);
+  }, [fetchData, initialQueryKey, queryKey]);
 
   // ── update URL helpers ─────────────────────────────
   const updateParam = useCallback(

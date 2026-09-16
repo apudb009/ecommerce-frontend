@@ -16,7 +16,15 @@ const STATUS_COLORS = {
   CANCELLED: 'bg-red-100 text-red-700',
 };
 
-export default function InvoicesPage() {
+export default function InvoicesPage({
+  initialData,
+  initialMeta,
+  initialQueryKey,
+}: {
+  initialData?: Invoice[];
+  initialMeta?: import('@/lib/types').PaginationMeta | null;
+  initialQueryKey?: string;
+}) {
   const {
     data: invoices,
     meta,
@@ -31,6 +39,9 @@ export default function InvoicesPage() {
   } = useTable<Invoice>({
     endpoint: '/invoices',
     defaultSort: 'issuedAt',
+    initialData,
+    initialMeta,
+    initialQueryKey,
   });
 
   const {
