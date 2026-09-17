@@ -12,6 +12,7 @@ const PROTECTED_ROUTES = ['/cart', '/checkout', '/orders', '/profile'];
 
 // ── redirect away if already logged in ────────────
 const AUTH_ONLY_ROUTES = ['/login', '/register', '/admin/login'];
+const AUTH_ENTRY_ROUTES = ['/login', '/admin/login'];
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, setUser, logout } = useAuthStore();
@@ -25,11 +26,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const { fetchSettings, isMaitenanceMode, loading: settingsLoading } = useSettingsStore();
 
   useEffect(() => {
+    if (AUTH_ENTRY_ROUTES.includes(pathname)) return;
     void fetchSettings();
-  }, [fetchSettings]);
+  }, [fetchSettings, pathname]);
 
   useEffect(() => {
     const init = async () => {
+      if (AUTH_ENTRY_ROUTES.includes(pathname)) {
+        setLoading(false);
+        return;
+      }
+
       if (settingsLoading) {
         return;
       }
@@ -159,7 +166,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
   }, [settingsLoading, isMaitenanceMode, pathname, router]);
 
-  if (loading && isAuthOnly) {
+  if (loading && isAuthOnly && !AUTH_ENTRY_ROUTES.includes(pathname)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
