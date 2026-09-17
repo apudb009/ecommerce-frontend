@@ -11,12 +11,6 @@ export async function serverFetch<T>(path: string, options: FetchOptions = {}): 
   const cookieStore = await cookies();
   const token = cookieStore.get('access_token')?.value;
 
-  console.log('[serverFetch]', {
-    path,
-    hasToken: !!token,
-    tokenLength: token?.length,
-  });
-
   const headers: HeadersInit = {};
 
   if (token) {

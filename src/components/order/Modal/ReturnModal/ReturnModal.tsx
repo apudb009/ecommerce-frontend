@@ -1,11 +1,12 @@
 import api from '@/lib/api';
+import { ReturnRequest, ReturnStatus } from '@/lib/types';
 import { FC, useState } from 'react';
 import { toast } from 'sonner';
 
 type Props = {
   orderId: number;
   onClose: () => void;
-  onSubmitted: () => void;
+  onSubmitted: (returnStatus: ReturnStatus) => void;
 };
 
 const ReturnModal: FC<Props> = ({ orderId, onClose, onSubmitted }) => {
@@ -25,9 +26,12 @@ const ReturnModal: FC<Props> = ({ orderId, onClose, onSubmitted }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post(`/returns/order/${orderId}`, { reason, details });
+      const { data } = await api.post<ReturnRequest>(`/returns/order/${orderId}`, {
+        reason,
+        details,
+      });
       toast.success('Return request submitted');
-      onSubmitted();
+      onSubmitted(data.status);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to submit');
