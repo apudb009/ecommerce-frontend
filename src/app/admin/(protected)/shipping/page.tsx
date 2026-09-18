@@ -5,7 +5,7 @@ import ShippingClient from '@/components/admin/shipping/ShippingClient';
 export default async function AdminShippingPage() {
   const [user, shippings] = await Promise.all([
     serverFetch<User>('/user/me'),
-    serverFetch<Shipping[]>('/shippings'),
+    serverFetch<Shipping[]>('/shipping'),
   ]);
 
   const permissions: UserPermission[] =
