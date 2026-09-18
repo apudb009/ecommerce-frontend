@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import api from '@/lib/api';
-import { Category } from '@/lib/types';
+import { Category, UserPermission } from '@/lib/types';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -13,11 +13,11 @@ import CategoryModal from './modal/CategoryModal';
 import Loader from '@/components/common/loader/Loader';
 
 type Props = {
+  permissions: UserPermission[];
   categories: Category[];
 };
 
-export default function CategoryClient({ categories: initialCategories }: Props) {
-  const { permissions, isPermissionLoaded } = useAuthStore();
+export default function CategoryClient({ categories: initialCategories, permissions }: Props) {
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
@@ -91,8 +91,6 @@ export default function CategoryClient({ categories: initialCategories }: Props)
             </div>
           ))}
         </div>
-      ) : !isPermissionLoaded ? (
-        <Loader />
       ) : (
         <RestrictedAccess />
       )}

@@ -6,8 +6,8 @@ import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, Zap, X } from 'lucide-react';
 import { format } from 'date-fns';
 import CountdownTimer from '@/components/ui/CountdownTimer';
-import { FlashSale, FlashSaleProduct, Product } from '@/lib/types';
-import { useAuthStore } from '@/store/authStore';
+import { FlashSale, FlashSaleProduct, UserPermission } from '@/lib/types';
+//import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
 import Image from 'next/image';
 import DeleteModal from '@/components/ui/DeleteModal';
@@ -15,9 +15,14 @@ import AddProductsToSale from './SaleProducts';
 import FlashSaleModal from './modal/sale';
 import { useSettingsStore } from '@/store/settingsStore';
 
-export default function FlashSalesClient() {
-  const { permissions } = useAuthStore();
-  const [sales, setSales] = useState<FlashSale[]>([]);
+type Props = {
+  sales: FlashSale[];
+  permissions: UserPermission[];
+};
+
+export default function FlashSalesClient({ sales: initialSales, permissions }: Props) {
+  //const { permissions } = useAuthStore();
+  const [sales, setSales] = useState<FlashSale[]>(initialSales);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<FlashSale | null>(null);
@@ -26,22 +31,9 @@ export default function FlashSalesClient() {
     settings: { currency_symbol: currencySymbol },
   } = useSettingsStore();
 
-  useEffect(() => {
-    const fetchSales = async () => {
-      try {
-        const { data } = await api.get('/flash-sales');
-        setSales(data);
-      } catch {
-        toast.error('Failed to load flash sales');
-      } finally {
-        setLoading(false);
-      }
-    };
-    void fetchSales();
-  }, []);
-
   const handleDelete = async (id: number) => {
     try {
+      setLoading(true);
       await api.delete(`/flash-sales/${id}`);
       setSales((prev) => prev.filter((s) => s.id !== id));
       toast.success('Flash sale deleted');
@@ -49,6 +41,7 @@ export default function FlashSalesClient() {
       toast.error('Failed to delete');
     } finally {
       setActiveSale(undefined);
+      setLoading(false);
     }
   };
 
@@ -85,9 +78,7 @@ export default function FlashSalesClient() {
       </div>
 
       <div className="space-y-4">
-        {loading ? (
-          <div className="h-32 animate-pulse rounded-lg bg-gray-100" />
-        ) : sales.length === 0 ? (
+        {sales.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 py-16 text-center">
             <Zap className="mb-3 h-10 w-10 text-gray-300" />
             <p className="text-gray-500">No flash sales yet</p>

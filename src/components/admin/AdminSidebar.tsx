@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { hasAnyPermission } from '@/helpers/checkPermission';
-import { NavItem } from '@/lib/types';
+import { NavItem, UserPermission } from '@/lib/types';
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, always: true },
@@ -46,10 +46,14 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Settings', href: '/admin/settings', icon: Settings, module: 'settings' },
 ];
 
-export default function AdminSidebar() {
+type Props = {
+  permissions: UserPermission[];
+};
+
+export default function AdminSidebar({ permissions }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout, permissions } = useAuthStore();
+  const { logout } = useAuthStore();
 
   // ── filter nav items based on permissions ──────────
   const filteredNavItems = NAV_ITEMS.filter((item) => {

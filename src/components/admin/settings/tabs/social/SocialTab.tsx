@@ -1,10 +1,11 @@
-import { StoreSettings } from '@/lib/types';
+import { StoreSettings, UserPermission } from '@/lib/types';
 import Field from '../../_utils/field';
 import Section from '../../_utils/section';
 import { FC } from 'react';
 
 type Props = {
   settings: StoreSettings;
+  permissions: UserPermission[];
   onChangeAction: (key: keyof StoreSettings, value: unknown) => void;
 };
 

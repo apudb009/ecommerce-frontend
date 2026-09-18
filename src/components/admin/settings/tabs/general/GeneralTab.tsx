@@ -2,19 +2,18 @@ import Section from '../../_utils/section';
 import Field from '../../_utils/field';
 import ImageUpload from '@/components/ui/ImageUpload';
 import Toggle from '../../_utils/toggle';
-import { StoreSettings } from '@/lib/types';
+import { StoreSettings, UserPermission } from '@/lib/types';
 import { FC } from 'react';
 import { inputClass } from '../../_utils/constants';
-import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
 
 type Props = {
   settings: StoreSettings;
+  permissions: UserPermission[];
   onChangeAction: (key: keyof StoreSettings, value: unknown) => void;
 };
 
-const GeneralTab: FC<Props> = ({ settings, onChangeAction: update }) => {
-  const { permissions } = useAuthStore();
+const GeneralTab: FC<Props> = ({ settings, onChangeAction: update, permissions }) => {
   return (
     <>
       {/* store identity */}

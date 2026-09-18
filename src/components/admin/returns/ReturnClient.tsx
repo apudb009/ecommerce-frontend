@@ -1,31 +1,39 @@
 'use client';
 
-import { useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { Download } from 'lucide-react';
-import { Invoice } from '@/lib/types';
+import { RotateCcw } from 'lucide-react';
+import { ReturnRequest, UserPermission } from '@/lib/types';
 import { useTable } from '@/hooks/useTable';
 import SortableHeader from '@/components/admin/table/SortableHeader';
 import AdminPagination from '@/components/admin/table/AdminPagination';
 import AdminSearch from '@/components/admin/table/AdminSearch';
-import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
 import RestrictedAccess from '@/components/admin/RestrictedAccess';
-import { useSettingsStore } from '@/store/settingsStore';
 
-const STATUS_COLORS = {
-  PAID: 'bg-green-100 text-green-700',
-  UNPAID: 'bg-yellow-100 text-yellow-700',
-  CANCELLED: 'bg-red-100 text-red-700',
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: 'bg-yellow-100 text-yellow-700',
+  APPROVED: 'bg-blue-100 text-blue-700',
+  REJECTED: 'bg-red-100 text-red-700',
+  REFUNDED: 'bg-green-100 text-green-700',
 };
 
-const STATUS_OPTIONS = ['', 'PAID', 'UNPAID', 'CANCELLED'];
+const STATUS_OPTIONS = ['', 'PENDING', 'APPROVED', 'REJECTED', 'REFUNDED'];
 
-export default function AdminInvoicesPage() {
+export default function ReturnClient({
+  initialData,
+  initialMeta,
+  initialQueryKey,
+  permissions,
+}: {
+  initialData?: ReturnRequest[];
+  initialMeta?: import('@/lib/types').PaginationMeta | null;
+  initialQueryKey?: string;
+  permissions: UserPermission[];
+}) {
   const {
-    data: invoices,
+    data: returns,
     meta,
     loading,
     limit,
@@ -33,72 +41,46 @@ export default function AdminInvoicesPage() {
     sort,
     order,
     setPage,
-    setSearch,
     setFilter,
+    setSearch,
     setSort,
     setLimit,
     refresh,
-  } = useTable<Invoice>({
-    endpoint: '/invoices/admin/all',
-    defaultSort: 'issuedAt',
+  } = useTable<ReturnRequest>({
+    endpoint: '/returns/admin/all',
+    defaultSort: 'createdAt',
+    initialData,
+    initialMeta,
+    initialQueryKey,
   });
 
-  const { permissions } = useAuthStore();
-  const {
-    settings: { currency_symbol: currencySymbol },
-  } = useSettingsStore();
-
-  const [downloading, setDownloading] = useState<number | null>(null);
-
-  const handleDownload = async (invoice: Invoice) => {
-    setDownloading(invoice.id);
+  const handleUpdateStatus = async (id: number, status: string, adminNote?: string) => {
     try {
-      const response = await api.get(`/invoices/${invoice.id}/pdf`, {
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${invoice.invoiceNo}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      toast.success('Downloaded');
-    } catch {
-      toast.error('Failed to download');
-    } finally {
-      setDownloading(null);
-    }
-  };
-
-  const handleStatusChange = async (id: number, status: string) => {
-    try {
-      const hasActionPermission = hasPermission(permissions, 'invoices', 'update');
+      const hasActionPermission = hasPermission(permissions, 'returns', 'update');
       if (!hasActionPermission) {
-        toast.error('You do not have permission to update invoice status');
+        toast.error('You do not have permission to update return status');
         return;
       }
-      await api.patch(`/invoices/${id}/status`, { status });
+      await api.patch(`/returns/${id}/status`, { status, adminNote });
       refresh();
       toast.success('Status updated');
     } catch {
-      toast.error('Failed to update status');
+      toast.error('Failed to update');
     }
   };
 
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+        <RotateCcw className="h-6 w-6 text-orange-500" />
+        <h1 className="text-2xl font-bold text-gray-900">Return Requests</h1>
         {meta && (
           <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-600">
             {meta.total}
           </span>
         )}
       </div>
-
-      {hasPermission(permissions, 'invoices', 'read') ? (
+      {hasPermission(permissions, 'returns', 'read') ? (
         <>
           {/* ── TOOLBAR ─────────────────────────────────── */}
           <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -106,7 +88,7 @@ export default function AdminInvoicesPage() {
             <AdminSearch
               value={search}
               onChangeAction={setSearch}
-              placeholder="Search by order ID, customer..."
+              placeholder="Search by user email, name..."
             />
 
             {/* status filter tabs */}
@@ -127,13 +109,12 @@ export default function AdminInvoicesPage() {
               ))}
             </div>
           </div>
-
           <div className="overflow-hidden rounded-lg border bg-white">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-left text-xs font-semibold uppercase text-gray-500">
                 <tr>
                   <SortableHeader
-                    label="Invoice"
+                    label="ID"
                     field="id"
                     currentSort={sort}
                     currentOrder={order}
@@ -141,16 +122,9 @@ export default function AdminInvoicesPage() {
                     className="px-4 py-3"
                   />
                   <th className="px-4 py-3">Customer</th>
-                  <SortableHeader
-                    label="Order"
-                    field="orderId"
-                    currentSort={sort}
-                    currentOrder={order}
-                    onSortAction={setSort}
-                    className="px-4 py-3"
-                  />
+                  <th className="px-4 py-3">Order</th>
+                  <th className="px-4 py-3">Reason</th>
                   <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Amount</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
@@ -162,47 +136,56 @@ export default function AdminInvoicesPage() {
                       Loading...
                     </td>
                   </tr>
-                ) : !invoices.length ? (
+                ) : returns.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                      No invoices found.
+                      No return requests yet
                     </td>
                   </tr>
                 ) : (
-                  invoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{invoice.invoiceNo}</td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {invoice.user?.name || invoice.user?.email}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">#{invoice.orderId}</td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {format(new Date(invoice.issuedAt), 'MMM d, yyyy')}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-900">
-                        {currencySymbol}
-                        {Number(invoice.order?.grandTotalAmount).toFixed(2)}
+                  returns.map((r) => (
+                    <tr key={r.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium">#{r.id}</td>
+                      <td className="px-4 py-3 text-gray-600">{r.user?.name || r.user?.email}</td>
+                      <td className="px-4 py-3 text-gray-500">#{r.order?.id}</td>
+                      <td className="px-4 py-3 text-gray-600">{r.reason.replace(/_/g, ' ')}</td>
+                      <td className="px-4 py-3 text-gray-400">
+                        {format(new Date(r.createdAt), 'MMM d, yyyy')}
                       </td>
                       <td className="px-4 py-3">
-                        <select
-                          value={invoice.status}
-                          onChange={(e) => handleStatusChange(invoice.id, e.target.value)}
-                          className={`rounded-full px-2 py-1 text-xs font-medium border-0 ${STATUS_COLORS[invoice.status as keyof typeof STATUS_COLORS]}`}
+                        <span
+                          className={`rounded-full px-2 py-1 text-xs font-medium ${STATUS_COLORS[r.status]}`}
                         >
-                          <option value="UNPAID">UNPAID</option>
-                          <option value="PAID">PAID</option>
-                          <option value="CANCELLED">CANCELLED</option>
-                        </select>
+                          {r.status}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => handleDownload(invoice)}
-                          disabled={downloading === invoice.id}
-                          className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 ml-auto"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                          PDF
-                        </button>
+                        {r.status === 'PENDING' &&
+                          hasPermission(permissions, 'returns', 'update') && (
+                            <div className="flex justify-end gap-1">
+                              <button
+                                onClick={() => handleUpdateStatus(r.id, 'APPROVED')}
+                                className="rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleUpdateStatus(r.id, 'REJECTED')}
+                                className="rounded-md bg-red-500 px-2 py-1 text-xs text-white hover:bg-red-600"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                        {r.status === 'APPROVED' &&
+                          hasPermission(permissions, 'returns', 'update') && (
+                            <button
+                              onClick={() => handleUpdateStatus(r.id, 'REFUNDED')}
+                              className="rounded-md bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700"
+                            >
+                              Mark Refunded
+                            </button>
+                          )}
                       </td>
                     </tr>
                   ))

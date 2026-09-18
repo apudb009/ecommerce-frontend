@@ -12,6 +12,7 @@ import { hasPermission } from '@/helpers/checkPermission';
 import ProductVariantForm from './product/variant/form';
 import ProductVariant from './product/variant';
 import ProductVariantAddModal from './product/variant/modal';
+import Loader from '../common/loader/Loader';
 
 type VariantFormState = {
   name: string;
@@ -28,7 +29,7 @@ type FormErrors = Partial<
 >;
 
 export default function ProductForm({ product }: { product?: Product }) {
-  const { permissions } = useAuthStore();
+  const { permissions, isPermissionLoaded } = useAuthStore();
   const router = useRouter();
   const isEdit = !!product;
 
@@ -206,6 +207,10 @@ export default function ProductForm({ product }: { product?: Product }) {
   const handleDeleteVariant = async (variantId: number) => {
     setVariants((prev) => prev.filter((v) => v.id !== variantId));
   };
+
+  if (!isPermissionLoaded) {
+    return <Loader />;
+  }
 
   if (
     !hasPermission(permissions, 'products', 'create') ||

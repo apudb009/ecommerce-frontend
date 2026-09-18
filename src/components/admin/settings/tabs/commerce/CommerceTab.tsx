@@ -3,17 +3,16 @@ import { inputClass } from '../../_utils/constants';
 import Field from '../../_utils/field';
 import Toggle from '../../_utils/toggle';
 import Section from '../../_utils/section';
-import { StoreSettings } from '@/lib/types';
+import { StoreSettings, UserPermission } from '@/lib/types';
 import { FC } from 'react';
-import { useAuthStore } from '@/store/authStore';
 
 type Props = {
   settings: StoreSettings;
+  permissions: UserPermission[];
   onChangeAction: (key: keyof StoreSettings, value: unknown) => void;
 };
 
-const CommerceTab: FC<Props> = ({ settings, onChangeAction: update }) => {
-  const { permissions } = useAuthStore();
+const CommerceTab: FC<Props> = ({ settings, onChangeAction: update, permissions }) => {
   return (
     <>
       <Section title="Currency">

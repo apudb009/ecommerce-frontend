@@ -4,21 +4,22 @@ import { useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
+//import { useAuthStore } from '@/store/authStore';
 import Image from 'next/image';
 import { hasPermission } from '@/helpers/checkPermission';
 import RestrictedAccess from '@/components/admin/RestrictedAccess';
 import DeleteModal from '@/components/ui/DeleteModal';
 import BannerModal from './BannerModal';
-import { Banner } from '@/lib/types';
+import { Banner, UserPermission } from '@/lib/types';
 import Loader from '@/components/common/loader/Loader';
 
 type Props = {
+  permissions: UserPermission[];
   banners: Banner[];
 };
 
-export default function BannerClient({ banners: initBanners }: Props) {
-  const { permissions, isPermissionLoaded } = useAuthStore();
+export default function BannerClient({ banners: initBanners, permissions }: Props) {
+  //const { isPermissionLoaded } = useAuthStore();
   const [banners, setBanners] = useState<Banner[]>(initBanners);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Banner | null>(null);
@@ -120,8 +121,6 @@ export default function BannerClient({ banners: initBanners }: Props) {
               </div>
             </div>
           ))
-        ) : !isPermissionLoaded ? (
-          <Loader />
         ) : (
           <RestrictedAccess />
         )}
