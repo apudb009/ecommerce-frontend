@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Package,
@@ -48,6 +48,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { logout, permissions } = useAuthStore();
 
   // ── filter nav items based on permissions ──────────
@@ -84,14 +85,17 @@ export default function AdminSidebar() {
 
         <hr className="my-3" />
 
-        <Link
-          href="#"
-          onClick={() => logout()}
-          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50"
+        <button
+          type="button"
+          onClick={() => {
+            logout();
+            router.replace('/admin/login');
+          }}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium text-gray-500 hover:bg-gray-50"
         >
           <LogOut className="h-4 w-4" />
           Logout
-        </Link>
+        </button>
       </nav>
     </aside>
   );

@@ -8,11 +8,13 @@ interface AuthState {
   setUser: (user: User | null) => void;
   isAuthenticated: boolean;
   permissions: UserPermission[];
+  isPermissionLoaded: boolean;
   logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  isPermissionLoaded: false,
   setUser: (user) =>
     set({
       user,
@@ -24,6 +26,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             }))
           : [],
       isAuthenticated: !!user,
+      isPermissionLoaded: true,
     }),
   isAuthenticated: false,
   permissions: [],

@@ -26,7 +26,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const { fetchSettings, isMaitenanceMode, loading: settingsLoading } = useSettingsStore();
 
   useEffect(() => {
-    if (AUTH_ENTRY_ROUTES.includes(pathname)) return;
+    if (AUTH_ENTRY_ROUTES.includes(pathname) || pathname.startsWith('/admin')) return;
     void fetchSettings();
   }, [fetchSettings, pathname]);
 
@@ -37,7 +37,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         return;
       }
 
-      if (settingsLoading) {
+      if (settingsLoading && !pathname.startsWith('/admin')) {
         return;
       }
 
@@ -85,7 +85,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       // ─────────────────────────────────────────────
       if (user) {
         const shouldHydrateCart =
-          !cartLoaded && !pathname.startsWith('/cart') && !pathname.startsWith('/checkout');
+          !cartLoaded &&
+          !pathname.startsWith('/admin') &&
+          !pathname.startsWith('/cart') &&
+          !pathname.startsWith('/checkout');
 
         if (shouldHydrateCart) {
           await fetchCart();
@@ -110,7 +113,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       // Fetch user (page refresh)
       // ─────────────────────────────────────────────
       try {
-        const shouldFetchCart = !pathname.startsWith('/cart') && !pathname.startsWith('/checkout');
+        const shouldFetchCart =
+          !pathname.startsWith('/admin') &&
+          !pathname.startsWith('/cart') &&
+          !pathname.startsWith('/checkout');
         const [userResponse] = await Promise.all([
           api.get('/user/me'),
           shouldFetchCart ? fetchCart() : Promise.resolve(),
