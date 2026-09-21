@@ -94,13 +94,7 @@ export default function TaxClient({ taxes: initialTaxes, permissions }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
-                  Loading...
-                </td>
-              </tr>
-            ) : taxes.length === 0 ? (
+            {taxes.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
                   No tax rates added yet

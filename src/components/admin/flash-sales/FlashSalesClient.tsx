@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, Zap, X } from 'lucide-react';
 import { format } from 'date-fns';
 import CountdownTimer from '@/components/ui/CountdownTimer';
 import { FlashSale, FlashSaleProduct, UserPermission } from '@/lib/types';
-//import { useAuthStore } from '@/store/authStore';
 import { hasPermission } from '@/helpers/checkPermission';
 import Image from 'next/image';
 import DeleteModal from '@/components/ui/DeleteModal';
@@ -21,7 +20,6 @@ type Props = {
 };
 
 export default function FlashSalesClient({ sales: initialSales, permissions }: Props) {
-  //const { permissions } = useAuthStore();
   const [sales, setSales] = useState<FlashSale[]>(initialSales);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -117,7 +115,7 @@ export default function FlashSalesClient({ sales: initialSales, permissions }: P
                         <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700">
                           {sale.discountType === 'PERCENTAGE'
                             ? `${sale.discountValue}% OFF`
-                            : `{currencySymbol}${sale.discountValue} OFF`}
+                            : `${currencySymbol ?? ''}${sale.discountValue} OFF`}
                         </span>
                       </div>
                       <p className="text-xs text-gray-400">

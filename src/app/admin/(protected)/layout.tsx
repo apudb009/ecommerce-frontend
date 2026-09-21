@@ -6,7 +6,10 @@ import { User, UserPermission } from '@/lib/types';
 export default async function ProtectedAdminLayout({ children }: { children: React.ReactNode }) {
   let permissions: UserPermission[] = [];
   try {
-    const user = await serverFetch<User>('/user/me', { revalidate: 0 });
+    const user = await serverFetch<User>('/user/me', {
+      revalidate: 0,
+      loginPath: '/admin/login',
+    });
     permissions =
       user.userRole?.permissions?.map((entry) => ({
         module: entry.permission.module,

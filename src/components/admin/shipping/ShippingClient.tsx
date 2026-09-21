@@ -139,7 +139,7 @@ export default function ShippingClient({ shippings, permissions }: Props) {
                         {Number(method.price) === 0 ? (
                           <span className="text-green-600">Free</span>
                         ) : (
-                          `${currencySymbol}${Number(method.price).toFixed(2)}`
+                          `${currencySymbol ?? ''}${Number(method.price).toFixed(2)}`
                         )}
                       </td>
                       <td className="px-4 py-3">
