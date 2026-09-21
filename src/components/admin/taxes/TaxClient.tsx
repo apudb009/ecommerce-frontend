@@ -21,14 +21,12 @@ export default function TaxClient({ taxes: initialTaxes, permissions }: Props) {
     settings: { currency_symbol: currencySymbol },
   } = useSettingsStore();
   const [taxes, setTaxes] = useState<Tax[]>(initialTaxes);
-  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Tax | null>(null);
   const [activeTax, setActiveTax] = useState<Tax>();
 
   const handleDelete = async (id: number) => {
     try {
-      setLoading(true);
       await api.delete(`/taxes/${id}`);
       setTaxes((prev) => prev.filter((t) => t.id !== id));
       toast.success('Tax deleted');
@@ -36,7 +34,6 @@ export default function TaxClient({ taxes: initialTaxes, permissions }: Props) {
       toast.error('Failed to delete tax');
     } finally {
       setActiveTax(undefined);
-      setLoading(false);
     }
   };
 

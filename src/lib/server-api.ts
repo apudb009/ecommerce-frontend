@@ -28,37 +28,32 @@ export async function serverFetch<T>(path: string, options: FetchOptions = {}): 
   });
 
   if (res.status === 401) {
-    // Try first to refresh token
     const refreshToken = cookieStore.get('refresh_token')?.value;
+    const loginPath = options.loginPath ?? (path.includes('/admin') ? '/admin/login' : '/login');
 
-    if (refreshToken) {
-      const refreshResponse: Response = await fetch(`${API_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${refreshToken}`,
-        },
-      });
+    if (!refreshToken) {
+      redirect(loginPath);
+    }
 
-      if (!refreshResponse.ok) {
-        console.error('Failed to refresh token');
-        const loginPath =
-          options.loginPath ?? (path.includes('/admin') ? '/admin/login' : '/login');
-        redirect(loginPath);
-      }
+    const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${refreshToken}`,
+      },
+      cache: 'no-store',
+    });
 
+    if (refreshResponse.ok) {
       const refreshData = await refreshResponse.json();
 
-      if (refreshData) {
-        // save new tokens
-        setCookie('access_token', refreshData.access_token, 15 * 60);
-        setCookie('refresh_token', refreshData.refresh_token ?? refreshToken, 7 * 24 * 60 * 60);
+      setCookie('access_token', refreshData.access_token, 15 * 60);
+      setCookie('refresh_token', refreshData.refresh_token ?? refreshToken, 7 * 24 * 60 * 60);
 
-        // retry original request
-        return serverFetch(path, options);
-      }
+      return serverFetch(path, options);
     }
-  }
 
+    redirect(loginPath);
+  }
   if (!res.ok) {
     throw new Error(`Failed to fetch ${path}: ${res.status}`);
   }
