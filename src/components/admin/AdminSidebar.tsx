@@ -33,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Categories', href: '/admin/categories', icon: FolderTree, module: 'categories' },
   { label: 'Orders', href: '/admin/orders', icon: ShoppingBag, module: 'orders' },
   { label: 'Coupons', href: '/admin/coupons', icon: Tag, module: 'coupons' },
+  { label: 'Customers', href: '/admin/customers', icon: Users, module: 'users' },
   { label: 'Flash Sales', href: '/admin/flash-sales', icon: Zap, module: 'flash-sales' },
   { label: 'Newsletters', href: '/admin/newsletters', icon: Mail, module: 'newsletters' },
   { label: 'Notifications', href: '/admin/notifications', icon: Bell, module: 'notifications' },

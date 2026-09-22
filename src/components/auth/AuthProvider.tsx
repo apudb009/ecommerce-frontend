@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import api, { getToken } from '@/lib/api';
+import api, { getToken, refreshTokens } from '@/lib/api';
 
 // ── only these routes require login ───────────────
 const PROTECTED_ROUTES = ['/cart', '/checkout', '/orders', '/profile'];
@@ -24,6 +24,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState(true);
 
   const { fetchSettings, isMaitenanceMode, loading: settingsLoading } = useSettingsStore();
+
+  useEffect(() => {
+    if (AUTH_ENTRY_ROUTES.includes(pathname) || !getToken()) return;
+
+    const refreshSession = () => {
+      void refreshTokens().catch(() => {
+        logout();
+        router.replace(pathname.startsWith('/admin') ? '/admin/login' : '/login');
+      });
+    };
+
+    const interval = window.setInterval(refreshSession, 10 * 60 * 1000); // refresh token every 10 minutes
+    return () => window.clearInterval(interval);
+  }, [logout, pathname, router]);
 
   useEffect(() => {
     if (AUTH_ENTRY_ROUTES.includes(pathname) || pathname.startsWith('/admin')) return;

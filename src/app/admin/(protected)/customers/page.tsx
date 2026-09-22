@@ -1,12 +1,12 @@
 import { PaginatedResponse, User, UserPermission } from '@/lib/types';
 import { serverFetch } from '@/lib/server-api';
-import UserClient from '@/components/admin/users/UserClient';
+import CustomerClient from '@/components/admin/customer/CustomerClient';
 
 type PageProps = {
   searchParams: Promise<Record<string, string | undefined>>;
 };
 
-export default async function AdminUsersPage({ searchParams }: PageProps) {
+export default async function AdminCustomerPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const page = params.page ?? '1';
   const limit = params.limit ?? '10';
@@ -22,7 +22,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
 
   const [user, users] = await Promise.all([
     serverFetch<User>('/user/me', { revalidate: 0 }),
-    serverFetch<PaginatedResponse<User>>(`/user/admin/all?${query}`, {
+    serverFetch<PaginatedResponse<User>>(`/user/admin/customers?${query}`, {
       revalidate: 0,
     }),
   ]);
@@ -34,7 +34,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
     })) ?? [];
 
   return (
-    <UserClient
+    <CustomerClient
       initialData={users.data}
       initialMeta={users.meta}
       initialQueryKey={queryKey}

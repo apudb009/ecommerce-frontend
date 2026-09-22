@@ -23,6 +23,23 @@ export function setTokens(accessToken: string, refreshToken: string) {
   setCookie(REFRESH_KEY, refreshToken, 7 * 24 * 60 * 60);
 }
 
+export async function refreshTokens(): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  const refreshToken = localStorage.getItem(REFRESH_KEY);
+  if (!refreshToken) throw new Error('No refresh token');
+
+  const { data } = await axios.post(
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
+    {},
+    {
+      headers: { Authorization: `Bearer ${refreshToken}` },
+    },
+  );
+
+  setTokens(data.access_token, data.refresh_token ?? refreshToken);
+}
+
 export function clearTokens() {
   if (typeof window === 'undefined') return;
 
@@ -91,26 +108,10 @@ api.interceptors.response.use(
       original._retry = true;
 
       try {
-        const refreshToken =
-          typeof window !== 'undefined' ? localStorage.getItem(REFRESH_KEY) : null;
-
-        if (!refreshToken) throw new Error('No refresh token');
-
-        const { data } = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${refreshToken}`,
-            },
-          },
-        );
-
-        // save new tokens
-        setTokens(data.access_token, data.refresh_token ?? refreshToken);
+        await refreshTokens();
 
         // retry original request
-        original.headers.Authorization = `Bearer ${data.access_token}`;
+        original.headers.Authorization = `Bearer ${localStorage.getItem(TOKEN_KEY)}`;
         return api(original);
       } catch {
         // refresh failed — clear everything
