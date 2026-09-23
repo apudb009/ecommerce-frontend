@@ -60,7 +60,6 @@ export default function ProductSlider({
         style={{ scrollbarWidth: 'none' }}
       >
         {products.map((product, index) => (
-          // <SliderCard key={product.id} product={product} index={index} />
           <ProductCard
             key={product.id}
             product={product}

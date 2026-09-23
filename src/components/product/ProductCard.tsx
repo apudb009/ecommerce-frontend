@@ -10,6 +10,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useWishlistStore } from '@/store/wishlistStore';
 import Image from 'next/image';
 
 export default function ProductCard({
@@ -25,8 +26,9 @@ export default function ProductCard({
   const { user } = useAuthStore();
   const { settings } = useSettingsStore();
   const { fetchCart, cart } = useCartStore();
+  const inWishlist = useWishlistStore((state) => state.items[product.id] ?? false);
+  const setWishlistItem = useWishlistStore((state) => state.setItem);
   const [adding, setAdding] = useState(false);
-  const [inWishlist, setInWishlist] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [flashPrice, setFlashPrice] = useState<number | null>(null);
 
@@ -38,9 +40,9 @@ export default function ProductCard({
     if (!user) return;
     api
       .get(`/wishlist/check/${product.id}`)
-      .then(({ data }) => setInWishlist(data))
+      .then(({ data }) => setWishlistItem(product.id, data))
       .catch(() => {});
-  }, [product.id, user]);
+  }, [product.id, setWishlistItem, user]);
 
   useEffect(() => {
     // check if product is in any active flash sale
@@ -75,11 +77,11 @@ export default function ProductCard({
     try {
       if (inWishlist) {
         await api.delete(`/wishlist/${product.id}`);
-        setInWishlist(false);
+        setWishlistItem(product.id, false);
         toast.success('Removed from wishlist');
       } else {
         await api.post(`/wishlist/${product.id}`);
-        setInWishlist(true);
+        setWishlistItem(product.id, true);
         toast.success('Added to wishlist');
       }
     } catch {
