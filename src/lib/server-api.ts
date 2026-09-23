@@ -21,7 +21,7 @@ export async function serverFetch<T>(path: string, options: FetchOptions = {}): 
   const res = await fetch(`${API_URL}${path}`, {
     headers,
     next: {
-      //revalidate: options.revalidate ?? 300, // default: 5 min
+      revalidate: options.revalidate,
       tags: options.tags,
     },
   });

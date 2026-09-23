@@ -11,7 +11,7 @@ import Link from 'next/link';
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/home';
+  const redirect = searchParams.get('redirect') || '/';
 
   const setUser = useAuthStore((s) => s.setUser);
   const fetchCart = useCartStore((s) => s.fetchCart);

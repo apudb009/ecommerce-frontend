@@ -1,7 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { Product } from '@/lib/types';
 import { toast } from 'sonner';
@@ -69,6 +69,7 @@ export default function ProductClient({
   const {
     settings: { currency_symbol: currencySymbol },
   } = useSettingsStore();
+  const searchParams = useSearchParams();
   const [activeProduct, setActiveProduct] = useState<Product>();
 
   const handleDelete = async (id: number) => {
@@ -123,8 +124,7 @@ export default function ProductClient({
                   key={index}
                   onClick={() => setFilter('status', status.value || null)}
                   className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                    (new URLSearchParams(window?.location?.search || '').get('status') || '') ===
-                    status.value
+                    (searchParams.get('status') || '') === status.value
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
@@ -178,10 +178,12 @@ export default function ProductClient({
                             {productImage ? (
                               <Image
                                 src={productImage.url}
-                                alt=""
-                                className="h-10 w-10 rounded-md object-cover"
-                                width={40}
-                                height={40}
+                                alt={product.name}
+                                className="h-13 w-10 rounded-md object-cover"
+                                width={80}
+                                height={80}
+                                sizes="80px"
+                                quality={100}
                               />
                             ) : (
                               <div className="h-10 w-10 rounded-md bg-gray-100" />

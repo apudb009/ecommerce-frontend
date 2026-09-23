@@ -61,7 +61,7 @@ export default function Navbar() {
   const handleLogout = () => {
     logout();
     setUserMenuOpen(false);
-    router.push('/home');
+    router.push('/');
   };
 
   const cartCount = cart?.totalItems || 0;

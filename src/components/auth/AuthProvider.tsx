@@ -114,7 +114,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         }
 
         if (isAuthOnly) {
-          router.replace(user.role !== 'CUSTOMER' ? '/admin/dashboard' : '/home');
+          router.replace(user.role !== 'CUSTOMER' ? '/admin/dashboard' : '/');
           setLoading(false);
           return;
         }
@@ -145,7 +145,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         }
 
         if (isAuthOnly) {
-          router.replace(data.role !== 'CUSTOMER' ? '/admin/dashboard' : '/home');
+          router.replace(data.role !== 'CUSTOMER' ? '/admin/dashboard' : '/');
           setLoading(false);
           return;
         }
